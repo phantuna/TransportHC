@@ -2,19 +2,15 @@ package org.example.webapplication.Controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import org.example.webapplication.Dto.request.PayrollRequest;
-import org.example.webapplication.Dto.request.TruckExpenseRequest;
-import org.example.webapplication.Dto.response.ExpenseReportResponse;
-import org.example.webapplication.Dto.response.PayrollDetailResponse;
-import org.example.webapplication.Dto.response.PayrollResponse;
-import org.example.webapplication.Dto.response.ScheduleReportResponse;
+import org.example.webapplication.Dto.request.Truck.TruckExpenseRequest;
+import org.example.webapplication.Dto.response.Expense.ExpenseReportResponse;
+import org.example.webapplication.Dto.response.Payroll.PayrollDetailResponse;
+import org.example.webapplication.Dto.response.Schedule.ScheduleReportResponse;
 import org.example.webapplication.Service.ReportService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @RestController

@@ -1,14 +1,17 @@
 package org.example.webapplication.Service;
 
-import org.example.webapplication.Dto.request.TruckExpenseRequest;
+import org.example.webapplication.Dto.request.Truck.TruckExpenseRequest;
+import org.example.webapplication.Dto.response.Expense.ExpenseReportResponse;
+import org.example.webapplication.Dto.response.Expense.ExpenseResponse;
+import org.example.webapplication.Dto.response.Payroll.PayrollDetailResponse;
+import org.example.webapplication.Dto.response.Schedule.ScheduleDocumentResponse;
+import org.example.webapplication.Dto.response.Schedule.ScheduleReportResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.webapplication.Enum.ApprovalStatus;
-import org.example.webapplication.Dto.request.PayrollRequest;
-import org.example.webapplication.Dto.response.TravelScheduleResponse;
-import org.example.webapplication.Dto.response.*;
+import org.example.webapplication.Dto.response.Travel.TravelScheduleResponse;
 import org.example.webapplication.Entity.*;
 import org.example.webapplication.Exception.AppException;
 import org.example.webapplication.Exception.ErrorCode;

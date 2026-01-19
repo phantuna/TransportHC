@@ -1,4 +1,4 @@
-package org.example.webapplication.Dto.response;
+package org.example.webapplication.Dto.response.Authentication;
 
 import lombok.Builder;
 import lombok.Data;

@@ -4,8 +4,8 @@ package org.example.webapplication.Controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.webapplication.Dto.request.TruckRequest;
-import org.example.webapplication.Dto.response.TruckResponse;
+import org.example.webapplication.Dto.request.Truck.TruckRequest;
+import org.example.webapplication.Dto.response.Truck.TruckResponse;
 import org.example.webapplication.Service.TruckService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;

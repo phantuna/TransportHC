@@ -39,7 +39,7 @@ public enum ErrorCode {
     TRUCK_ALREADY_IN_TRAVEL_TODAY(6002,"Truck already in travel today"),
     INVALID_REQUEST_DATA(6003,"Invalid request data"),
     TRUCK_ALREADY_IN_TRAVEL_SAME_DAY(6004,"Truck already in travel same day"),
-
+    TRUCK_HAS_TRAVEL_TODAY(6005,"Truck has travel today"),
     //VALIDATION
     USERNAME_NOT_NULL(7001,"username must be not null"),
     USERNAME_NOT_VALID(7002,"username must be at least 3 charactors"),
@@ -95,7 +95,7 @@ public enum ErrorCode {
     TRUCK_STATUS_REQUIRED(106, "truck status required"),
     GANMOOC_REQUIRED(107, "GANMOOC_REQUIRED"),
 
-
+    INVALID_INVENTORY_STATUS(108, "Invalid inventory status"),
     ;
 
 

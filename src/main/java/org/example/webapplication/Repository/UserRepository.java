@@ -1,6 +1,5 @@
 package org.example.webapplication.Repository;
 
-import org.example.webapplication.Dto.request.UserRequest;
 import org.example.webapplication.Entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

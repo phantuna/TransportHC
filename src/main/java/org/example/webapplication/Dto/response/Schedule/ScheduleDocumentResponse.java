@@ -1,4 +1,4 @@
-package org.example.webapplication.Dto.response;
+package org.example.webapplication.Dto.response.Schedule;
 
 
 import lombok.AllArgsConstructor;

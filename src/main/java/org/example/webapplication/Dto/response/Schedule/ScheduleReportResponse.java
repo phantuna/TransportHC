@@ -1,9 +1,10 @@
-package org.example.webapplication.Dto.response;
+package org.example.webapplication.Dto.response.Schedule;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.webapplication.Dto.response.Travel.TravelScheduleResponse;
 
 import java.util.List;
 

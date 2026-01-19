@@ -2,15 +2,15 @@ package org.example.webapplication.Service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.example.webapplication.Dto.request.TruckRequest;
-import org.example.webapplication.Dto.response.TruckResponse;
+import org.example.webapplication.Dto.request.Truck.TruckRequest;
+import org.example.webapplication.Dto.response.Truck.TruckResponse;
 import org.example.webapplication.Entity.Truck;
 import org.example.webapplication.Entity.User;
 import org.example.webapplication.Exception.AppException;
 import org.example.webapplication.Exception.ErrorCode;
+import org.example.webapplication.Repository.TravelRepository;
 import org.example.webapplication.Repository.TruckRepository;
 import org.example.webapplication.Repository.UserRepository;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +20,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class TruckService {
-
+    private final TravelRepository  travelRepository;
     private final TruckRepository truckRepository;
     private final UserRepository userRepository;
 
@@ -71,6 +71,11 @@ public class TruckService {
     // manager - supervisor
     @PreAuthorize("hasAuthority('MANAGE_TRUCK')")
     public TruckResponse updatedTruck(TruckRequest dto, String truckId) {
+        boolean hasTravelToday = travelRepository.existsActiveTravelToday(truckId);
+
+        if (hasTravelToday) {
+            throw new AppException(ErrorCode.TRUCK_HAS_TRAVEL_TODAY);
+        }
 
         Truck truck = truckRepository.findById(truckId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRUCK_NOT_FOUND));

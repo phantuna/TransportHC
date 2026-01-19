@@ -2,10 +2,12 @@ package org.example.webapplication.Controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.webapplication.Dto.request.InventoryRequest;
-import org.example.webapplication.Dto.response.InventoryResponse;
-import org.example.webapplication.Dto.response.InventorySummaryResponse;
+import org.example.webapplication.Dto.request.Inventory.InventoryRequest;
+import org.example.webapplication.Dto.response.Inventory.InventoryResponse;
+import org.example.webapplication.Dto.response.Inventory.InventorySummaryResponse;
+import org.example.webapplication.Enum.InventoryStatus;
 import org.example.webapplication.Service.InventoryService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RequestMapping("/inventory")
@@ -24,7 +27,6 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     @PostMapping("/created")
-    @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
     public InventoryResponse created (@Valid  @RequestBody InventoryRequest dto)
     {
         return inventoryService.inventoryCreated(dto);
@@ -75,6 +77,20 @@ public class InventoryController {
     @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
     public List<InventorySummaryResponse> getInventorySummary() {
         return inventoryService.getInventorySummary();
+    }
+
+
+    @GetMapping("/search")
+    public List<InventoryResponse> search(
+            @RequestParam(required = false) String itemId,
+            @RequestParam(required = false) InventoryStatus status,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate
+    ) {
+        return inventoryService.searchInventories(
+                itemId, status, keyword, fromDate, toDate
+        );
     }
 
 

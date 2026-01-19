@@ -2,12 +2,11 @@ package org.example.webapplication.Service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.apache.tomcat.util.http.parser.Authorization;
 import org.example.webapplication.Enum.ApprovalStatus;
 import org.example.webapplication.Enum.TruckStatus;
-import org.example.webapplication.Dto.request.TravelRequest;
-import org.example.webapplication.Dto.response.ExpenseResponse;
-import org.example.webapplication.Dto.response.TravelResponse;
+import org.example.webapplication.Dto.request.Travel.TravelRequest;
+import org.example.webapplication.Dto.response.Expense.ExpenseResponse;
+import org.example.webapplication.Dto.response.Travel.TravelResponse;
 import org.example.webapplication.Entity.Expense;
 import org.example.webapplication.Entity.Schedule;
 import org.example.webapplication.Entity.Travel;
@@ -18,8 +17,6 @@ import org.example.webapplication.Repository.ScheduleRepository;
 import org.example.webapplication.Repository.TravelRepository;
 import org.example.webapplication.Repository.TruckRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -254,5 +251,8 @@ public class TravelService {
 
         travelRepository.delete(travel);
     }
+
+
+
 
 }

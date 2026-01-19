@@ -24,8 +24,6 @@ public class Base {
     @LastModifiedDate
     private LocalDateTime modifiedDate;
 
-
-
     @LastModifiedBy
     private String modifiedBy;
 

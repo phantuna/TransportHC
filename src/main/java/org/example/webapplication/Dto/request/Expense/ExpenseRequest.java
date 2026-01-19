@@ -1,4 +1,4 @@
-package org.example.webapplication.Dto.request;
+package org.example.webapplication.Dto.request.Expense;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import org.example.webapplication.Enum.TypeExpense;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -31,5 +32,7 @@ public class ExpenseRequest {
     @PastOrPresent(message = "DATE_NOT_IN_FUTURE")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate incurredDate;
+
+
 
 }

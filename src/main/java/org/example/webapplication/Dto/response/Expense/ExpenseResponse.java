@@ -1,4 +1,4 @@
-package org.example.webapplication.Dto.response;
+package org.example.webapplication.Dto.response.Expense;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,6 +8,7 @@ import org.example.webapplication.Enum.ApprovalStatus;
 import org.example.webapplication.Enum.TypeExpense;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -23,5 +24,6 @@ public class ExpenseResponse {
     private String driverName;
     private LocalDate incurredDate;
     private String modifiedBy;
+    private LocalDateTime CreatedDate;
 
 }

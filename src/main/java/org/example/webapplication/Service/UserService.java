@@ -2,15 +2,14 @@ package org.example.webapplication.Service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.example.webapplication.Dto.request.UserRequest;
-import org.example.webapplication.Dto.response.UserResponse;
+import org.example.webapplication.Dto.request.User.UserRequest;
+import org.example.webapplication.Dto.response.User.UserResponse;
 import org.example.webapplication.Entity.Role_Permission.Role;
 import org.example.webapplication.Entity.User;
 import org.example.webapplication.Exception.AppException;
 import org.example.webapplication.Exception.ErrorCode;
 import org.example.webapplication.Repository.RoleRepository;
 import org.example.webapplication.Repository.UserRepository;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -75,7 +74,10 @@ public class UserService {
                 .password(saved.getPassword())
                 .phone(saved.getPhone())
                 .birthday(saved.getBirthday())
-                .roleIds(saved.getRoles().stream().map(Role::getId).toList())
+                .roleIds(saved.getRoles()
+                        .stream()
+                        .map(Role::getId)
+                        .toList())
                 .baseSalary(saved.getBaseSalary())
                 .build();
     }

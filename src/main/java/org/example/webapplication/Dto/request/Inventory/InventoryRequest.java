@@ -1,4 +1,4 @@
-package org.example.webapplication.Dto.request;
+package org.example.webapplication.Dto.request.Inventory;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.webapplication.Enum.InventoryStatus;
 
 @Data
 @AllArgsConstructor
@@ -27,4 +28,6 @@ public class InventoryRequest {
 
     @NotBlank(message = "CUSTOMER_NAME_NOT_NULL")
     private String customerName;
+
+    private InventoryStatus status;
 }

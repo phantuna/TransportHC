@@ -1,4 +1,4 @@
-package org.example.webapplication.Dto.request;
+package org.example.webapplication.Dto.request.Payroll;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;

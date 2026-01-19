@@ -2,16 +2,18 @@ package org.example.webapplication.Service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.example.webapplication.Dto.request.InventoryRequest;
-import org.example.webapplication.Dto.response.InventoryResponse;
-import org.example.webapplication.Dto.response.InventorySummaryResponse;
+import org.example.webapplication.Dto.request.Inventory.InventoryRequest;
+import org.example.webapplication.Dto.response.Inventory.InventoryResponse;
+import org.example.webapplication.Dto.response.Inventory.InventorySummaryResponse;
 import org.example.webapplication.Entity.Inventory;
 import org.example.webapplication.Entity.Invoice;
 import org.example.webapplication.Entity.Item;
+import org.example.webapplication.Enum.InventoryStatus;
 import org.example.webapplication.Exception.AppException;
 import org.example.webapplication.Exception.ErrorCode;
 import org.example.webapplication.Repository.InventoryRepository;
@@ -27,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,7 +58,8 @@ public class InventoryService {
         inventory.setQuantity(dto.getQuantity());
         inventory.setDescription(dto.getDescription()); // ví dụ: "Nhập kho 9/11"
         inventory.setCustomerName(dto.getCustomerName());
-        inventory.setInvoice(invoice); // nếu có
+        inventory.setInvoice(invoice);
+        inventory.setStatus(dto.getStatus());// nếu có
 
         Inventory saved = inventoryRepository.save(inventory);
         return InventoryResponse.builder()
@@ -65,6 +69,7 @@ public class InventoryService {
                 .invoiceId(invoice.getId())
                 .description(saved.getDescription())
                 .customerName(saved.getCustomerName())
+                .status(saved.getStatus())
                 .build();
     }
 
@@ -120,6 +125,7 @@ public class InventoryService {
                 .description(inventory.getDescription())
                 .customerName(inventory.getCustomerName())
                 .invoiceId(inventory.getInvoice().getId())
+                .status(inventory.getStatus())
                 .build();
     }
 
@@ -143,6 +149,8 @@ public class InventoryService {
                                     ? inventory.getInvoice().getId()
                                     : null
                     )
+                    .CreatedDate(inventory.getCreatedDate())
+                    .status(inventory.getStatus())
                     .build();
 
             responses.add(response);
@@ -180,10 +188,11 @@ public class InventoryService {
         return responses;
     }
 
+    @Transactional
     @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
     public void importFromExcel(MultipartFile file) {
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
-
+            DataFormatter formatter = new DataFormatter();
             Sheet sheet = workbook.getSheetAt(0);
 
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
@@ -193,23 +202,34 @@ public class InventoryService {
                 String itemId = row.getCell(0).getStringCellValue().trim();
                 double quantity = row.getCell(1).getNumericCellValue();
                 String description = row.getCell(2).getStringCellValue();
+                String statusStr = formatter
+                        .formatCellValue(row.getCell(3))
+                        .trim()
+                        .toUpperCase();
 
-                Item item = itemRepository.findById(itemId)
+                InventoryStatus status;
+                try {
+                    status = InventoryStatus.valueOf(statusStr);
+                } catch (IllegalArgumentException e) {
+                    throw new AppException(ErrorCode.INVALID_INVENTORY_STATUS);
+                }                Item item = itemRepository.findById(itemId)
                         .orElseThrow(() -> new AppException(ErrorCode.ITEM_NOT_FOUND));
 
                 Inventory inventory = new Inventory();
                 inventory.setItem(item);
                 inventory.setQuantity(quantity);
                 inventory.setDescription(description);
+                inventory.setStatus(status);
 
                 inventoryRepository.save(inventory);
             }
 
         } catch (Exception e) {
-            throw new AppException(ErrorCode.EXCEL_IMPORT_FAILED);
+            e.printStackTrace();
         }
     }
 
+    @Transactional
     @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
     public ByteArrayInputStream exportToExcel()
     throws IOException{
@@ -218,9 +238,11 @@ public class InventoryService {
         Sheet sheet = workbook.createSheet("Inventory");
 
         Row header = sheet.createRow(0);
-        header.createCell(0).setCellValue("Item");
+        header.createCell(0).setCellValue("Item ID");
         header.createCell(1).setCellValue("Quantity");
-        header.createCell(2).setCellValue("Type");
+        header.createCell(2).setCellValue("Description");
+        header.createCell(3).setCellValue("Status");
+
 
         List<Inventory> inventories = inventoryRepository.findAll();
 
@@ -230,11 +252,55 @@ public class InventoryService {
             row.createCell(0).setCellValue(i.getItem().getId());
             row.createCell(1).setCellValue(i.getQuantity());
             row.createCell(2).setCellValue(i.getDescription());
+            row.createCell(3).setCellValue(i.getStatus().name());
+
         }
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         workbook.write(out);
         return new ByteArrayInputStream(out.toByteArray());
     }
+
+    @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
+    public List<InventoryResponse> searchInventories(
+            String itemId,
+            InventoryStatus status,
+            String keyword,
+            LocalDateTime fromDate,
+            LocalDateTime toDate
+    ) {
+
+        List<Inventory> inventories = inventoryRepository.searchAndFilter(
+                itemId,
+                status,
+                keyword,
+                fromDate,
+                toDate
+        );
+
+        List<InventoryResponse> responses = new ArrayList<>();
+
+        for (Inventory inventory : inventories) {
+            responses.add(
+                    InventoryResponse.builder()
+                            .inventoryId(inventory.getId())
+                            .itemId(inventory.getItem().getId())
+                            .quantity(inventory.getQuantity())
+                            .description(inventory.getDescription())
+                            .customerName(inventory.getCustomerName())
+                            .invoiceId(
+                                    inventory.getInvoice() != null
+                                            ? inventory.getInvoice().getId()
+                                            : null
+                            )
+                            .status(inventory.getStatus())
+                            .CreatedDate(inventory.getCreatedDate())
+                            .build()
+            );
+        }
+
+        return responses;
+    }
+
 
 }

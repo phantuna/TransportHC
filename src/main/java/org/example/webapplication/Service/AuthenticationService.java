@@ -2,8 +2,8 @@ package org.example.webapplication.Service;
 
 
 import lombok.RequiredArgsConstructor;
-import org.example.webapplication.Dto.request.AuthenticationRequest;
-import org.example.webapplication.Dto.response.AuthenticationResponse;
+import org.example.webapplication.Dto.request.Authentication.AuthenticationRequest;
+import org.example.webapplication.Dto.response.Authentication.AuthenticationResponse;
 import org.example.webapplication.Entity.Role_Permission.Permission;
 import org.example.webapplication.Entity.User;
 import org.example.webapplication.Exception.AppException;

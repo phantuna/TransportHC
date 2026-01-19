@@ -1,11 +1,9 @@
 package org.example.webapplication.Exception;
 
-import org.example.webapplication.Dto.response.ApiResponse;
+import org.example.webapplication.Dto.response.Authentication.ApiResponse;
 import org.example.webapplication.Dto.response.ErrorItemResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 

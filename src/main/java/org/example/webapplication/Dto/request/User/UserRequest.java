@@ -1,12 +1,10 @@
-package org.example.webapplication.Dto.request;
+package org.example.webapplication.Dto.request.User;
 
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.webapplication.Exception.ErrorCode;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Date;
 import java.util.List;

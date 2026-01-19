@@ -1,4 +1,4 @@
-package org.example.webapplication.Dto.request;
+package org.example.webapplication.Dto.request.Truck;
 
 
 import jakarta.validation.constraints.NotBlank;

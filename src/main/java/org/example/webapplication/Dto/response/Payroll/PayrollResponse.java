@@ -1,4 +1,4 @@
-package org.example.webapplication.Dto.response;
+package org.example.webapplication.Dto.response.Payroll;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -4,8 +4,8 @@ package org.example.webapplication.Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.webapplication.Enum.ApprovalStatus;
-import org.example.webapplication.Dto.request.ExpenseRequest;
-import org.example.webapplication.Dto.response.ExpenseResponse;
+import org.example.webapplication.Dto.request.Expense.ExpenseRequest;
+import org.example.webapplication.Dto.response.Expense.ExpenseResponse;
 import org.example.webapplication.Entity.Expense;
 import org.example.webapplication.Entity.Travel;
 import org.example.webapplication.Entity.Truck;
@@ -18,7 +18,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,6 +127,7 @@ public class ExpenseService {
                     .driverName(truck.getDriver().getUsername())
                     .incurredDate(expense.getIncurredDate())
                     .modifiedBy(expense.getModifiedBy())
+                    .CreatedDate(expense.getCreatedDate())
                     .build();
 
             expenseResponses.add(response);

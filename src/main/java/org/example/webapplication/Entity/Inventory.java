@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.webapplication.Enum.InventoryStatus;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -26,5 +27,7 @@ public class Inventory extends Base{
 
     private String customerName;
 
+    @Enumerated(EnumType.STRING)
+    private InventoryStatus status;
 
 }

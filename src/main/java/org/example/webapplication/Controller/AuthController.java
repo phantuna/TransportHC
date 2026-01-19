@@ -3,9 +3,9 @@ package org.example.webapplication.Controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.webapplication.Dto.request.AuthenticationRequest;
-import org.example.webapplication.Dto.response.ApiResponse;
-import org.example.webapplication.Dto.response.AuthenticationResponse;
+import org.example.webapplication.Dto.request.Authentication.AuthenticationRequest;
+import org.example.webapplication.Dto.response.Authentication.ApiResponse;
+import org.example.webapplication.Dto.response.Authentication.AuthenticationResponse;
 import org.example.webapplication.Service.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;

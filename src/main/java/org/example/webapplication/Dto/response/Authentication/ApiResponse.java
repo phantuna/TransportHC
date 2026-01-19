@@ -1,4 +1,4 @@
-package org.example.webapplication.Dto.response;
+package org.example.webapplication.Dto.response.Authentication;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;

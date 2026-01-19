@@ -1,9 +1,8 @@
-package org.example.webapplication.Dto.request;
+package org.example.webapplication.Dto.request.Authentication;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import org.example.webapplication.Exception.ErrorCode;
 
 @Data
 public class AuthenticationRequest {

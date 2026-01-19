@@ -3,6 +3,8 @@ package org.example.webapplication.Repository;
 import org.example.webapplication.Entity.Travel;
 import org.example.webapplication.Entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -28,4 +30,13 @@ public interface TravelRepository extends JpaRepository<Travel,String> {
             String travelId
     );
 
+
+    @Query("""
+        SELECT COUNT(t) > 0
+        FROM Travel t
+        WHERE t.truck.id = :truckId
+          AND t.startDate <= CURRENT_DATE
+          AND (t.endDate IS NULL OR t.endDate >= CURRENT_DATE)
+    """)
+    boolean existsActiveTravelToday(@Param("truckId") String truckId);
 }
