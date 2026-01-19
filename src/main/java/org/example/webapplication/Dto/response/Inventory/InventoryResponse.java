@@ -6,6 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -19,4 +22,5 @@ public class InventoryResponse {
     private String invoiceId;
 
     private String customerName;
+    private LocalDateTime CreatedDate;
 }
