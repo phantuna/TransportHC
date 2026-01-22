@@ -23,7 +23,7 @@ import java.util.List;
 public class Truck extends Base{
 
     private String typeTruck;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "driver_id")
     private User driver;
 

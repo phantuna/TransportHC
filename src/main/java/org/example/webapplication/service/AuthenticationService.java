@@ -8,7 +8,7 @@ import org.example.webapplication.entity.Role_Permission.Permission;
 import org.example.webapplication.entity.User;
 import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
-import org.example.webapplication.repository.UserRepository;
+import org.example.webapplication.repository.user.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 

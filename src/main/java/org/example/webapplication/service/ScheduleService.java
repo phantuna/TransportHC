@@ -15,7 +15,7 @@ import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.ScheduleDocumentRepository;
 import org.example.webapplication.repository.ScheduleRepository;
-import org.example.webapplication.repository.UserRepository;
+import org.example.webapplication.repository.user.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

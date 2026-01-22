@@ -1,5 +1,6 @@
 package org.example.webapplication.service;
 
+import com.querydsl.core.Tuple;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -13,13 +14,14 @@ import org.example.webapplication.dto.response.inventory.InventorySummaryRespons
 import org.example.webapplication.entity.Inventory;
 import org.example.webapplication.entity.Invoice;
 import org.example.webapplication.entity.Item;
+import org.example.webapplication.entity.QInventory;
 import org.example.webapplication.enums.InventoryStatus;
 import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
-import org.example.webapplication.repository.InventoryRepository;
+import org.example.webapplication.repository.inventory.InventoryRepository;
 import org.example.webapplication.repository.InvoiceRepository;
 import org.example.webapplication.repository.ItemRepository;
-import org.example.webapplication.repository.UserRepository;
+import org.example.webapplication.repository.user.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +45,7 @@ public class InventoryService {
     private final ItemRepository itemRepository;
     private final InvoiceRepository invoiceRepository;
     private final UserRepository userRepository;
+    private final QInventory qInventory = QInventory.inventory;
 
     public InventoryResponse toResponse(Inventory inventory) {
         return InventoryResponse.builder()
@@ -151,12 +154,12 @@ public class InventoryService {
     public List<InventorySummaryResponse> getInventorySummary() {
 
 
-        List<Object[]> results = inventoryRepository.getInventorySummary();
+        List<Tuple> results = inventoryRepository.getInventorySummary();
         List<InventorySummaryResponse> responses = new ArrayList<>();
 
-        for (Object[] row : results) {
-            String itemId = (String) row[0];
-            Double quantity = (Double) row[1];
+        for (Tuple row : results) {
+            String itemId = row.get(qInventory.item.id);
+            Double quantity = row.get(qInventory.quantity.sum());
 
             responses.add(
                     InventorySummaryResponse.builder()

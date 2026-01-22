@@ -16,13 +16,13 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLDelete(sql = "UPDATE inventory SET deleted = 1, deleted_at = NOW() WHERE id = ?")
 @SQLRestriction("deleted = 0")
 public class Inventory extends Base{
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Item item;
 
     private double quantity;
     private String description;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Invoice invoice;
 
     private String customerName;

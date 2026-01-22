@@ -1,9 +1,6 @@
 package org.example.webapplication.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -18,16 +15,18 @@ import java.util.List;
 @SQLDelete(sql = "UPDATE travel SET deleted = 1, deleted_at = NOW() WHERE id = ?")
 @SQLRestriction("deleted = 0")
 public class Travel extends Base {
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Truck truck;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Schedule schedule;
+
     private LocalDate startDate;
     private LocalDate endDate;
+
     @OneToMany(mappedBy = "travel")
     private List<Expense> expenses = new ArrayList<>();
 }

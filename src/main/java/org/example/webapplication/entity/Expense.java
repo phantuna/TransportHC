@@ -16,7 +16,7 @@ import java.time.LocalDate;
 @SQLDelete(sql = "UPDATE expense SET deleted = 1, deleted_at = NOW() WHERE id = ?")
 @SQLRestriction("deleted = 0")
 public class Expense extends Base{
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "travel_id")
     private Travel travel;
 

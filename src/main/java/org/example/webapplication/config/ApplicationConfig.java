@@ -3,7 +3,7 @@ package org.example.webapplication.config;
 import org.example.webapplication.entity.User;
 import org.example.webapplication.entity.Role_Permission.Role;
 import org.example.webapplication.repository.RoleRepository;
-import org.example.webapplication.repository.UserRepository;
+import org.example.webapplication.repository.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;

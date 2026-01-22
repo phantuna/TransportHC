@@ -1,9 +1,10 @@
-package org.example.webapplication.dto.response.expense;
+package org.example.webapplication.dto.response.report;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.webapplication.dto.response.expense.ExpenseResponse;
 
 import java.time.LocalDate;
 import java.util.List;

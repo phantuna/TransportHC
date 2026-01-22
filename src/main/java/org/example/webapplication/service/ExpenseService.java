@@ -12,7 +12,7 @@ import org.example.webapplication.entity.Truck;
 import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.expense.ExpenseRepository;
-import org.example.webapplication.repository.TravelRepository;
+import org.example.webapplication.repository.travel.TravelRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,9 +20,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -125,13 +122,12 @@ public class ExpenseService {
         return toResponse(expense, modifyBy);
     }
 
-
     @PreAuthorize("hasAuthority('MANAGER_EXPENSE')")
     @Transactional
     public void deleteExpense(String expenseId) {
         Expense expense = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new AppException(ErrorCode.EXPENSE_NOT_FOUND));
 
-        expenseRepository.delete(expense); // -> @SQLDelete sẽ UPDATE deleted=1
+        expenseRepository.delete(expense);
     }
 }

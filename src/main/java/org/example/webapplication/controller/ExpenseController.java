@@ -45,9 +45,9 @@ public class ExpenseController {
         return expenseService.getExpenseById(id);
     }
 
-    @PostMapping("/approval/{id}")
+    @PostMapping("/approval")
     @PreAuthorize("hasAuthority('APPROVE_EXPENSE')")
-    public ExpenseResponse approvalExpense (@NotBlank @PathVariable String id){
+    public ExpenseResponse approvalExpense (@NotBlank @RequestParam String id){
         return expenseService.approvalExpense(id);
     }
 

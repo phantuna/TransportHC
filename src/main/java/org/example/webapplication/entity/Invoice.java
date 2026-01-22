@@ -24,9 +24,5 @@ public class Invoice extends Base{
     private InvoiceType type; // IMPORT / EXPORT
 
     private String customerName;
-
     private LocalDateTime createdAt;
-
-    @ManyToOne
-    private User createdBy;
 }

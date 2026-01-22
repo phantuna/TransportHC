@@ -9,7 +9,7 @@ import org.example.webapplication.entity.User;
 import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.RoleRepository;
-import org.example.webapplication.repository.UserRepository;
+import org.example.webapplication.repository.user.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

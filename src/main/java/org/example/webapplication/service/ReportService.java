@@ -1,11 +1,16 @@
 package org.example.webapplication.service;
 
 import org.example.webapplication.dto.request.truck.TruckExpenseRequest;
-import org.example.webapplication.dto.response.expense.ExpenseReportResponse;
+import org.example.webapplication.dto.response.report.ExpenseReportDetailResponse;
+import org.example.webapplication.dto.response.report.ExpenseReportResponse;
 import org.example.webapplication.dto.response.expense.ExpenseResponse;
 import org.example.webapplication.dto.response.payroll.PayrollDetailResponse;
+import org.example.webapplication.dto.response.report.ExpenseSummaryResponse;
 import org.example.webapplication.dto.response.schedule.ScheduleDocumentResponse;
 import org.example.webapplication.dto.response.schedule.ScheduleReportResponse;
+import org.example.webapplication.repository.travel.TravelRepository;
+import org.example.webapplication.repository.truck.TruckRepository;
+import org.example.webapplication.repository.user.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -143,47 +148,27 @@ public class ReportService {
     }
 
     @PreAuthorize("hasAuthority('VIEW_REPORT')")
-    public List<ExpenseReportResponse> allTruckExpenseReport() {
-
-        List<Truck> trucks = truckRepository.findAll();
-        List<ExpenseReportResponse> reports = new ArrayList<>();
-
-        for (Truck truck : trucks) {
-            double total = 0;
-            List<ExpenseResponse> expenses = new ArrayList<>();
-
-            String driverName = null;
-            if (truck.getDriver() != null) {
-                driverName = truck.getDriver().getUsername();
-            }
-            for (Travel travel : truck.getTravels()) {
-                if (travel.getExpenses() != null) {
-                    for (Expense expense : travel.getExpenses()) {
-
-                        if (expense.getApproval() == ApprovalStatus.APPROVED) {
-                            total += expense.getExpense();
-                        }
+    public Page<ExpenseSummaryResponse> allTruckExpenseSummaryReport(
+            int page,
+            int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return truckRepository.getAllTruckExpenseSummary(pageable);
+    }
 
 
-                        ExpenseResponse er = expenseService.toResponse(expense, driverName);
-
-                        expenses.add(er);
-                    }
-                }
-            }
-
-            ExpenseReportResponse report = ExpenseReportResponse.builder()
-                    .truckId(truck.getId())
-                    .licensePlate(truck.getLicensePlate())
-                    .expenses(expenses)
-                    .totalExpense(total)
-                    .driverName(driverName)
-                    .build();
-
-            reports.add(report);
-        }
-
-        return reports;
+    @PreAuthorize("hasAuthority('VIEW_REPORT')")
+    public Page<ExpenseReportDetailResponse> truckExpenseDetail(
+            String truckId,
+            LocalDate from,
+            LocalDate to,
+            int page,
+            int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return truckRepository.getExpenseDetailsByTruck(
+                truckId, from, to, pageable
+        );
     }
 
     @PreAuthorize("hasAuthority('VIEW_REPORT')")

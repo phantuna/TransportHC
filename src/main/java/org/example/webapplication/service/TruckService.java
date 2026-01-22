@@ -8,18 +8,14 @@ import org.example.webapplication.entity.Truck;
 import org.example.webapplication.entity.User;
 import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
-import org.example.webapplication.repository.TravelRepository;
-import org.example.webapplication.repository.TruckRepository;
-import org.example.webapplication.repository.UserRepository;
+import org.example.webapplication.repository.travel.TravelRepository;
+import org.example.webapplication.repository.truck.TruckRepository;
+import org.example.webapplication.repository.user.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-
-import java.sql.Driver;
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
