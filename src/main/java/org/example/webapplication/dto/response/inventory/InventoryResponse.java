@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.webapplication.enums.InventoryStatus;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -24,7 +25,7 @@ public class InventoryResponse {
     private String invoiceId;
 
     private String customerName;
-    private LocalDateTime CreatedDate;
+    private LocalDate createdDate;
 
     @Enumerated(EnumType.STRING)
     private InventoryStatus status;

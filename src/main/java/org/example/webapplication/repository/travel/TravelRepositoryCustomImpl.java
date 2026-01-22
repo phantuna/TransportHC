@@ -1,13 +1,12 @@
 package org.example.webapplication.repository.travel;
 
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
-import org.example.webapplication.entity.QTravel;
-import org.example.webapplication.entity.Travel;
-import org.example.webapplication.entity.User;
-import org.example.webapplication.enums.TravelStatus;
+import org.example.webapplication.dto.response.travel.TravelScheduleReportResponse;
+import org.example.webapplication.entity.*;
+import org.example.webapplication.enums.ApprovalStatus;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -18,81 +17,110 @@ import java.util.List;
 public class TravelRepositoryCustomImpl implements TravelRepositoryCustom{
     private final JPAQueryFactory queryFactory;
     private final QTravel qTravel = QTravel.travel;
+    private final QSchedule qSchedule = QSchedule.schedule;
+    private final QExpense  qExpense = QExpense.expense1;
 
-    private BooleanExpression truckIdEq(String truckId){
-        return truckId != null ? qTravel.truck.id.eq(truckId) : null;
-    }
-    private BooleanExpression userEq(User user){
-        return user != null ? qTravel.user.eq(user) : null;
-    }
-    private BooleanExpression startDateBetween(LocalDate from, LocalDate to){
-        if(from == null || to == null)
-            return null;
-        return qTravel.startDate.between(from,to);
-    }
-    private BooleanExpression startDateEq(LocalDate date) {
-        return date != null ? qTravel.startDate.eq(date) : null;
+
+    private BooleanBuilder buildWhere(
+            String truckId,
+            User user,
+            LocalDate from,
+            LocalDate to,
+            LocalDate date
+    ){
+
+        BooleanBuilder builder = new BooleanBuilder();
+        if (truckId != null){
+            builder.and(qTravel.truck.id.eq(truckId));
+        }
+
+        if (user != null){
+            builder.and(qTravel.user.eq(user));
+        }
+        if (from != null || to != null){
+            builder.and(qTravel.startDate.between(from,to));
+        }
+        if (date != null){
+            builder.and(qTravel.startDate.eq(date));
+        }
+        return builder;
     }
 
     @Override
     public List<Travel> findByTruck_IdAndStartDateBetween(String truckId, LocalDate fromDate, LocalDate toDate) {
+        BooleanBuilder buildWhere = buildWhere(truckId,null,fromDate,toDate,null);
 
         return queryFactory
                 .selectFrom(qTravel)
-                .where(
-                    truckIdEq(truckId),
-                    startDateBetween(fromDate, toDate)
-                )
+                .where(buildWhere)
                 .fetch();
     };
 
     @Override
     public List<Travel> findByUserAndStartDateBetween(User user, LocalDate startDate, LocalDate endDate) {
+        BooleanBuilder buildWhere = buildWhere(null,user,startDate,endDate,null);
 
         return queryFactory
                 .selectFrom(qTravel)
-                .where(
-                     userEq(user),
-                     startDateBetween(startDate, endDate)
-                )
+                .where(buildWhere)
                 .fetch();
     };
     @Override
     public boolean existsByTruck_IdAndStartDate(String truckId, LocalDate startDate) {
-
+        BooleanBuilder buildWhere = buildWhere(truckId,null,startDate,null,null);
         return queryFactory
                 .selectOne()
                 .from(qTravel)
-                .where(
-                        truckIdEq(truckId),
-                        startDateEq(startDate)
-                )
+                .where(buildWhere)
                 .fetchFirst() != null;
     };
     @Override
     public boolean existsTravel(String truckId, LocalDate startDate, String travelId){
-
+        BooleanBuilder buildWhere = buildWhere(truckId,null,null,null,startDate);
         return queryFactory
                 .selectOne()
                 .from(qTravel)
-                .where(
-                        truckIdEq(truckId),
-                        startDateEq(startDate),
-                        travelId != null ? qTravel.id.ne(travelId) : null
-                )
+                .where(buildWhere)
                 .fetchFirst() != null;
     };
     @Override
     public boolean existsActiveTravelToday(String truckId) {
-
+        BooleanBuilder buildWhere = buildWhere(truckId,null,null,null,null);
         return queryFactory
                 .selectOne()
                 .from(qTravel)
-                .where(
-                        truckIdEq(truckId),
-                        startDateEq(LocalDate.now())
-                )
+                .where(buildWhere)
                 .fetchFirst() != null;
     };
+
+
+    public List<TravelScheduleReportResponse> getTravelScheduleReport(String truckId) {
+        return queryFactory
+                .select(Projections.constructor(
+                        TravelScheduleReportResponse.class,
+                        qTravel.id,
+                        qTravel.startDate,
+                        qTravel.endDate,
+                        qSchedule.startPlace,
+                        qSchedule.endPlace,
+                        qSchedule.expense
+                                .add(
+                                        qExpense.expense.sum().coalesce(0.0)
+                                )
+                ))
+                .from(qTravel)
+                .leftJoin(qTravel.schedule, qSchedule)
+                .leftJoin(qTravel.expenses, qExpense)
+                .where(
+                        qTravel.truck.id.eq(truckId),
+                        qExpense.approval.eq(ApprovalStatus.APPROVED)
+                                .or(qExpense.id.isNull())
+                )
+                .groupBy(
+                        qTravel.id,
+                        qSchedule.id
+                )
+                .fetch();
+    }
 
 }

@@ -63,7 +63,7 @@ public class TravelService {
                                                 : null
                                 )
                                 .modifiedBy(expense.getModifiedBy())
-                                .CreatedDate(expense.getCreatedDate())
+                                .createdDate(expense.getCreatedDate())
                                 .build()
                 );
             }

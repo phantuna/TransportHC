@@ -34,6 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +60,7 @@ public class InventoryService {
                                 ? inventory.getInvoice().getId()
                                 : null
                 )
-                .CreatedDate(inventory.getCreatedDate())
+                .createdDate(inventory.getCreatedDate())
                 .status(inventory.getStatus())
                 .build();
     }
@@ -249,8 +250,8 @@ public class InventoryService {
             String itemId,
             InventoryStatus status,
             String keyword,
-            LocalDateTime fromDate,
-            LocalDateTime toDate
+            LocalDate fromDate,
+            LocalDate toDate
     ) {
 
         List<Inventory> inventories = inventoryRepository.searchAndFilter(

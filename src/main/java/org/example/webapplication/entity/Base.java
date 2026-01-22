@@ -7,6 +7,7 @@ import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -18,10 +19,10 @@ public class Base {
     private String id;
     @CreatedDate
     @Column(updatable = false)
-    private LocalDateTime createdDate;
+    private LocalDate createdDate;
 
     @LastModifiedDate
-    private LocalDateTime modifiedDate;
+    private LocalDate modifiedDate;
 
     @LastModifiedBy
     private String modifiedBy;

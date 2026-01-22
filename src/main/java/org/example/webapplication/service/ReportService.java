@@ -8,6 +8,7 @@ import org.example.webapplication.dto.response.payroll.PayrollDetailResponse;
 import org.example.webapplication.dto.response.report.ExpenseSummaryResponse;
 import org.example.webapplication.dto.response.schedule.ScheduleDocumentResponse;
 import org.example.webapplication.dto.response.schedule.ScheduleReportResponse;
+import org.example.webapplication.repository.payroll.PayrollRepository;
 import org.example.webapplication.repository.travel.TravelRepository;
 import org.example.webapplication.repository.truck.TruckRepository;
 import org.example.webapplication.repository.user.UserRepository;
@@ -52,19 +53,8 @@ public class ReportService {
         LocalDate from = LocalDate.of(year, month, 1);
         LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
 
-        List<Travel> travels =
-                travelRepository.findByUserAndStartDateBetween(driver, from, to);
 
-        double expenseSalary = 0;
-
-        for (Travel travel : travels) {
-            if (travel.getExpenses() == null) continue;
-            for (Expense e : travel.getExpenses()) {
-                if (e.getApproval() == ApprovalStatus.APPROVED) {
-                    expenseSalary += e.getExpense();
-                }
-            }
-        }
+        double expenseSalary = payrollRepository.sumApproedExpenseByDriverAndMonth(driver, from, to);
 
         double advance = payrollRepository.findByUser(driver)
                 .map(Payroll::getAdvanceSalary)

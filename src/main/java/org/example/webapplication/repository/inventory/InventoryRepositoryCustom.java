@@ -14,8 +14,8 @@ public interface InventoryRepositoryCustom {
             String itemId,
             InventoryStatus status,
             String keyword,
-            LocalDateTime fromDate,
-            LocalDateTime toDate
+            LocalDate fromDate,
+            LocalDate toDate
     );
 
     List<Tuple> getInventorySummary();

@@ -25,5 +25,5 @@ public class ExpenseReportDetailResponse {
     private String driverName;
     private LocalDate incurredDate;
     private String modifiedBy;
-    private LocalDateTime createdDate;
+    private LocalDate createdDate;
 }

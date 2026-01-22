@@ -8,26 +8,15 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface TravelRepositoryCustom {
-    List<Travel> findByTruck_IdAndStartDateBetween(
-            String truckId,
-            LocalDate fromDate,
-            LocalDate toDate);
+    List<Travel> findByTruck_IdAndStartDateBetween(String truckId, LocalDate fromDate, LocalDate toDate);
 
-    List<Travel> findByUserAndStartDateBetween(
-            User user,
-            LocalDate startDate,
-            LocalDate startDate2);
+    List<Travel> findByUserAndStartDateBetween(User user, LocalDate startDate, LocalDate startDate2);
 
-    boolean existsByTruck_IdAndStartDate(
-            String truckId, LocalDate startDate);
+    boolean existsByTruck_IdAndStartDate(String truckId, LocalDate startDate);
 
-    boolean existsTravel(
-            String truckId,
-            LocalDate startDate,
-            String travelId
+    boolean existsTravel(String truckId, LocalDate startDate, String travelId
     );
-    boolean existsActiveTravelToday(
-            String truckId);
+    boolean existsActiveTravelToday(String truckId);
 
 
 }

@@ -10,6 +10,7 @@ import org.example.webapplication.entity.QInventory;
 import org.example.webapplication.enums.InventoryStatus;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,41 +21,34 @@ public class InventoryRepositoryCustomImpl implements InventoryRepositoryCustom 
     private final JPAQueryFactory queryFactory;
     private final QInventory qInventory = QInventory.inventory;
 
-    private BooleanExpression itemIdEq(String itemId) {
-        if (itemId == null || itemId.isBlank()) return null;
-        return qInventory.item.id.eq(itemId);
-    }
-    private BooleanExpression statusEq(InventoryStatus status) {
-        if (status == null) return null;
-        return qInventory.status.eq(status);
-    }
-    private BooleanExpression keywordLike(String keyword) {
-        if (keyword == null || keyword.isBlank()) return null;
-        return qInventory.description.containsIgnoreCase(keyword)
-                .or(qInventory.customerName.containsIgnoreCase(keyword));
-    }
-    private BooleanExpression fromDateGoe(LocalDateTime fromDate) {
-        if (fromDate == null) return null;
-        return qInventory.createdDate.goe(fromDate);
-    }
-    private BooleanExpression toDateLoe(LocalDateTime toDate) {
-        if (toDate == null) return null;
-        return qInventory.createdDate.loe(toDate);
-    }
 
+    private BooleanBuilder buildWhere(
+            String itemId,
+            InventoryStatus status,
+            String keyword,
+            LocalDate fromDate,
+            LocalDate toDate
+    ){
+        BooleanBuilder builder = new BooleanBuilder();
+
+        if(itemId == null || itemId.isBlank())
+            builder.and(qInventory.item.id.isNull());
+
+        if (status == null) builder.and(qInventory.status.isNull());
+        if (keyword == null) builder.and(qInventory.description.containsIgnoreCase(keyword));
+        if (fromDate == null) builder.and(qInventory.createdDate.goe(fromDate));
+        if (toDate == null) builder.and(qInventory.createdDate.loe(toDate));
+
+        return builder;
+    }
 
     @Override
-    public List<Inventory> searchAndFilter(String itemId, InventoryStatus status, String keyword, LocalDateTime fromDate, LocalDateTime toDate){
+    public List<Inventory> searchAndFilter(String itemId, InventoryStatus status, String keyword, LocalDate fromDate, LocalDate toDate){
 
+        BooleanBuilder builder = buildWhere(itemId,status ,keyword,fromDate,toDate);
         return queryFactory
                 .selectFrom(qInventory)
-                .where(
-                        itemIdEq(itemId),
-                        statusEq(status),
-                        keywordLike(keyword),
-                        fromDateGoe(fromDate),
-                        toDateLoe(toDate)
-                )
+                .where(builder)
                 .fetch();
 
     }

@@ -24,6 +24,6 @@ public class ExpenseResponse {
     private String driverName;
     private LocalDate incurredDate;
     private String modifiedBy;
-    private LocalDateTime CreatedDate;
+    private LocalDate createdDate;
 
 }

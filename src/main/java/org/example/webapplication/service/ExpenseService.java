@@ -40,7 +40,7 @@ public class ExpenseService {
                 .driverName(truck.getDriver().getUsername())
                 .incurredDate(expense.getIncurredDate())
                 .modifiedBy(username)
-                .CreatedDate(expense.getCreatedDate())
+                .createdDate(expense.getCreatedDate())
                 .build();
     }
 
