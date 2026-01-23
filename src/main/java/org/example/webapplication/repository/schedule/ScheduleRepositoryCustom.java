@@ -13,8 +13,8 @@ public interface ScheduleRepositoryCustom {
     List<TravelScheduleReportResponse> getTravelScheduleReport (String truckId);
     List<ExpenseResponse> findExpensesByTravel(String truckId);
     List<ScheduleDocumentResponse> findDocumentsByTravel(String truckId);
-    List<ScheduleResponse> findSchedulesByDriverUsername(String username);
-    Page<ScheduleDocumentResponse> findDocumentsByScheduleIds(List<String> scheduleIds, Pageable pageable);
+    Page<ScheduleResponse> findSchedulePageByUsername(String username, Pageable pageable);
+    List<ScheduleDocumentResponse> findDocumentsByScheduleIds(List<String> scheduleIds);
 
 
 

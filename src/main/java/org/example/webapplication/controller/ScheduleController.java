@@ -51,7 +51,7 @@ public class ScheduleController {
 
     @GetMapping("/getByUsername")
     @PreAuthorize("hasAuthority('VIEW_SCHEDULE')")
-    public List<ScheduleResponse> getScheduleByUsername(
+    public Page<ScheduleResponse> getScheduleByUsername(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ){

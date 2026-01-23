@@ -58,7 +58,9 @@ public class ScheduleRepositoryCustomImpl implements ScheduleRepositoryCustom {
         BooleanBuilder build = new BooleanBuilder();
 
         if (username != null) {
-            build.and(qUser.username.eq(username));
+            build.and(
+                    qSchedule.drivers.any().username.eq(username)
+            );
         }
 
         return build;
@@ -156,31 +158,42 @@ public class ScheduleRepositoryCustomImpl implements ScheduleRepositoryCustom {
     }
 
     @Override
-    public List<ScheduleResponse> findSchedulesByDriverUsername(String username) {
-        BooleanBuilder scheduleWhere = travelWhere(username,null,null);
-        return queryFactory
+    public Page<ScheduleResponse> findSchedulePageByUsername(String username,Pageable pageable) {
+        BooleanBuilder scheduleWhere = scheduleByDriverWhere(username);
+        List<ScheduleResponse> responses = queryFactory
                 .select(Projections.bean(
                         ScheduleResponse.class,
                         qSchedule.id,
                         qSchedule.startPlace,
                         qSchedule.endPlace,
                         qSchedule.expense,
-                        qSchedule.approval,
                         qSchedule.description,
-                        qUser.username.as("driverName")
+                        qSchedule.approval,
+                        qUser.username.as("username")
                 ))
                 .from(qSchedule)
                 .join(qSchedule.drivers, qUser)
                 .where(scheduleWhere)
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
                 .fetch();
+
+        Long total = queryFactory
+                .select(qSchedule.count())
+                .from(qSchedule)
+                .join(qSchedule.drivers, qUser)
+                .where(scheduleWhere)
+                .fetchOne();
+        return new PageImpl<>(responses, pageable,total == null ?0 : total);
+
     }
 
     @Override
-    public Page<ScheduleDocumentResponse> findDocumentsByScheduleIds(
-            List<String> scheduleIds,
-            Pageable pageable) {
+    public List<ScheduleDocumentResponse> findDocumentsByScheduleIds(
+            List<String> scheduleIds)
+    {
         BooleanBuilder documentWhere = documentByScheduleIdsWhere(scheduleIds);
-        List<ScheduleDocumentResponse> responses = queryFactory
+        return queryFactory
                 .select(Projections.bean(
                         ScheduleDocumentResponse.class,
                         qScheduleDocument.schedule.id.as("scheduleId"),
@@ -192,13 +205,7 @@ public class ScheduleRepositoryCustomImpl implements ScheduleRepositoryCustom {
                 .from(qScheduleDocument)
                 .where(qScheduleDocument.schedule.id.in(scheduleIds))
                 .fetch();
-        Long total =queryFactory
-                .select(qScheduleDocument.count())
-                .from(qScheduleDocument)
-                .where(documentWhere)
-                .fetchOne();
 
-        return new PageImpl<>(responses, pageable,total == null ?0 : total);
     }
 
 }

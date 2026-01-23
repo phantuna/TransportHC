@@ -124,35 +124,37 @@ public class ScheduleService {
 
 
     @PreAuthorize("hasAuthority('VIEW_SCHEDULE')")
-    public List<ScheduleResponse> getScheduleByUsername(int page, int size){
+    public Page<ScheduleResponse> getScheduleByUsername(int page, int size){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
-        List<ScheduleResponse> schedules =
-                scheduleRepository.findSchedulesByDriverUsername(username);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ScheduleResponse> schedulePage =
+                scheduleRepository.findSchedulePageByUsername(username, pageable);
 
-        if (schedules.isEmpty()) {
+        if (schedulePage.isEmpty()) {
             throw new AppException(ErrorCode.SCHEDULE_NOT_FOUND);
         }
-        List<String> scheduleIds = schedules.stream()
+        List<String> scheduleIds = schedulePage.getContent().stream()
                 .map(ScheduleResponse::getId)
                 .toList();
+        List<ScheduleDocumentResponse> documents =
+                scheduleRepository.findDocumentsByScheduleIds(scheduleIds);
 
-        Pageable pageable = PageRequest.of(page, size);
-
-        Page<ScheduleDocumentResponse> documentPage =
-                scheduleRepository.findDocumentsByScheduleIds(scheduleIds, pageable);        Map<String, List<ScheduleDocumentResponse>> docMap =
-                documentPage.stream()
+        Map<String, List<ScheduleDocumentResponse>> docMap =
+                documents.stream()
                         .collect(Collectors.groupingBy(
                                 ScheduleDocumentResponse::getScheduleId
                         ));
-        for (ScheduleResponse s : schedules) {
-            s.setDocuments(
-                    docMap.getOrDefault(s.getId(), List.of())
-            );
-        }
 
-        return schedules;
+        schedulePage.getContent().forEach(s ->
+                s.setDocuments(
+                        docMap.getOrDefault(s.getId(), List.of())
+                )
+        );
+
+        return schedulePage;
+
     }
 
     @PreAuthorize("hasAuthority('APPROVE_SCHEDULE')")

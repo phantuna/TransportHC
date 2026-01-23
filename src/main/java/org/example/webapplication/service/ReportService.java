@@ -157,17 +157,10 @@ public class ReportService {
         Truck truck = truckRepository.findById(truckId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRUCK_NOT_FOUND));
 
-        // 1️⃣ LẤY DATA TỪ DSL
-        List<TravelScheduleReportResponse> travelSummaries =
-                scheduleRepository.getTravelScheduleReport(truckId);
+        List<TravelScheduleReportResponse> travelSummaries = scheduleRepository.getTravelScheduleReport(truckId);
+        List<ExpenseResponse> expenses = scheduleRepository.findExpensesByTravel(truckId);
+        List<ScheduleDocumentResponse> documents = scheduleRepository.findDocumentsByTravel(truckId);
 
-        List<ExpenseResponse> expenses =
-                scheduleRepository.findExpensesByTravel(truckId);
-
-        List<ScheduleDocumentResponse> documents =
-                scheduleRepository.findDocumentsByTravel(truckId);
-
-        // 2️⃣ GROUP DATA (service làm việc này là ĐÚNG CHỖ)
         Map<String, List<ExpenseResponse>> expenseMap =
                 expenses.stream()
                         .collect(Collectors.groupingBy(ExpenseResponse::getTravelId));
@@ -176,19 +169,13 @@ public class ReportService {
                 documents.stream()
                         .collect(Collectors.groupingBy(ScheduleDocumentResponse::getScheduleId));
 
-        // 3️⃣ BUILD RESPONSE
         List<TravelScheduleResponse> travelResponses = new ArrayList<>();
         double grandTotal = 0;
 
         for (TravelScheduleReportResponse summary : travelSummaries) {
-
             String travelId = summary.getTravelId();
-
-            List<ExpenseResponse> expenseResponses =
-                    expenseMap.getOrDefault(travelId, List.of());
-
-            List<ScheduleDocumentResponse> documentResponses =
-                    documentMap.getOrDefault(summary.getScheduleId(), List.of());
+            List<ExpenseResponse> expenseResponses = expenseMap.getOrDefault(travelId, List.of());
+            List<ScheduleDocumentResponse> documentResponses = documentMap.getOrDefault(summary.getScheduleId(), List.of());
 
             double travelTotal = summary.getTotalExpense();
             grandTotal += travelTotal;
