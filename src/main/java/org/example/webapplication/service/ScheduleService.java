@@ -13,12 +13,13 @@ import org.example.webapplication.entity.ScheduleDocument;
 import org.example.webapplication.entity.User;
 import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
-import org.example.webapplication.repository.ScheduleDocumentRepository;
-import org.example.webapplication.repository.ScheduleRepository;
+import org.example.webapplication.repository.schedule.ScheduleDocumentRepository;
+import org.example.webapplication.repository.schedule.ScheduleRepository;
 import org.example.webapplication.repository.user.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,7 +32,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -85,8 +88,6 @@ public class ScheduleService {
         if (start.equalsIgnoreCase(end)) {
             throw new AppException(ErrorCode.START_END_PLACE_MUST_DIFFERENT);
         }
-
-        // Check trùng tuyến
         if (scheduleRepository.existsByStartPlaceIgnoreCaseAndEndPlaceIgnoreCase(start, end)) {
             throw new AppException(ErrorCode.SCHEDULE_ROUTE_EXISTED);
         }
@@ -123,47 +124,35 @@ public class ScheduleService {
 
 
     @PreAuthorize("hasAuthority('VIEW_SCHEDULE')")
-    public List<ScheduleResponse> getScheduleByUsername(){
+    public List<ScheduleResponse> getScheduleByUsername(int page, int size){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = auth.getName();
+        String username = auth.getName();
 
-        List<Schedule> schedules =
-                scheduleRepository.findByDrivers_Username(currentUsername);
+        List<ScheduleResponse> schedules =
+                scheduleRepository.findSchedulesByDriverUsername(username);
 
         if (schedules.isEmpty()) {
             throw new AppException(ErrorCode.SCHEDULE_NOT_FOUND);
         }
+        List<String> scheduleIds = schedules.stream()
+                .map(ScheduleResponse::getId)
+                .toList();
 
-        List<ScheduleResponse> responses = new ArrayList<>();
+        Pageable pageable = PageRequest.of(page, size);
 
-        for (Schedule schedule : schedules) {
-
-            List<ScheduleDocumentResponse> docResponses = new ArrayList<>();
-            for (ScheduleDocument doc : schedule.getDocuments()) {
-                ScheduleDocumentResponse r = ScheduleDocumentResponse.builder()
-                        .fileName(doc.getFileName())
-                        .fileUrl(doc.getFileUrl())
-                        .fileType(doc.getFileType())
-                        .fileSize(doc.getFileSize())
-                        .build();
-                docResponses.add(r);
-            }
-
-            ScheduleResponse response = ScheduleResponse.builder()
-                    .id(schedule.getId())
-                    .startPlace(schedule.getStartPlace())
-                    .endPlace(schedule.getEndPlace())
-                    .expense(schedule.getExpense())
-                    .approval(schedule.getApproval())
-                    .description(schedule.getDescription())
-                    .documents(docResponses)
-                    .driverName(currentUsername)
-                    .build();
-
-            responses.add(response);
+        Page<ScheduleDocumentResponse> documentPage =
+                scheduleRepository.findDocumentsByScheduleIds(scheduleIds, pageable);        Map<String, List<ScheduleDocumentResponse>> docMap =
+                documentPage.stream()
+                        .collect(Collectors.groupingBy(
+                                ScheduleDocumentResponse::getScheduleId
+                        ));
+        for (ScheduleResponse s : schedules) {
+            s.setDocuments(
+                    docMap.getOrDefault(s.getId(), List.of())
+            );
         }
 
-        return responses;
+        return schedules;
     }
 
     @PreAuthorize("hasAuthority('APPROVE_SCHEDULE')")
@@ -171,21 +160,22 @@ public class ScheduleService {
         Schedule schedule = scheduleRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
 
-        ApprovalStatus current = schedule.getApproval();
-        if (current == null) current = ApprovalStatus.PENDING_APPROVAL;
-
-        // APPROVED -> PENDING (hủy duyệt)
-        if (target == ApprovalStatus.PENDING_APPROVAL) {
-            if (current != ApprovalStatus.APPROVED) {
-                throw new AppException(ErrorCode.INVALID_APPROVAL_TRANSITION);
-            }
+        ApprovalStatus current = schedule.getApproval() == null ? ApprovalStatus.PENDING_APPROVAL : schedule.getApproval();
+        boolean allowed;
+        if (current == target) {
+            throw new AppException(ErrorCode.SCHEDULE_ALREADY_IN_THIS_STATUS);
         }
 
-        // PENDING -> APPROVED
-        if (target == ApprovalStatus.APPROVED) {
-            if (current != ApprovalStatus.PENDING_APPROVAL) {
-                throw new AppException(ErrorCode.INVALID_APPROVAL_TRANSITION);
-            }
+        switch (current) {
+            case PENDING_APPROVAL ->
+                    allowed = target == ApprovalStatus.APPROVED;
+            case APPROVED ->
+                    allowed = target == ApprovalStatus.PENDING_APPROVAL;
+            default ->
+                    allowed = false;
+        }
+        if (!allowed) {
+            throw new AppException(ErrorCode.INVALID_APPROVAL_TRANSITION);
         }
 
         schedule.setApproval(target);

@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.example.webapplication.dto.request.truck.TruckExpenseRequest;
+import org.example.webapplication.dto.response.expense.ExpenseResponse;
 import org.example.webapplication.dto.response.report.ExpenseReportDetailResponse;
 import org.example.webapplication.dto.response.report.ExpenseReportResponse;
 import org.example.webapplication.dto.response.payroll.PayrollDetailResponse;
@@ -46,14 +47,15 @@ public class ReportController {
         return reportService.payrollAllByMonth(month, year,page,size);
     }
 
-    @PostMapping("/truckExpense")
-    @PreAuthorize("hasAuthority('VIEW_REPORT')")
-    public ExpenseReportResponse TruckExpenseReport(@Valid @RequestBody TruckExpenseRequest request){
-        return reportService.TruckExpenseReport(request);
+    @GetMapping("/truckExpense")
+    public Page<ExpenseResponse> TruckExpenseReport(
+            @Valid @RequestBody TruckExpenseRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size){
+        return reportService.TruckExpenseReport(request,page,size);
     }
 
     @GetMapping("/allTruckExpense")
-    @PreAuthorize("hasAuthority('VIEW_REPORT')")
     public Page<ExpenseSummaryResponse> allTruckExpenseSummaryReport(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size){

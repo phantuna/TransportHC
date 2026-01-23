@@ -51,8 +51,11 @@ public class ScheduleController {
 
     @GetMapping("/getByUsername")
     @PreAuthorize("hasAuthority('VIEW_SCHEDULE')")
-    public List<ScheduleResponse> getScheduleByUsername(){
-        return scheduleService.getScheduleByUsername();
+    public List<ScheduleResponse> getScheduleByUsername(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        return scheduleService.getScheduleByUsername(page,size);
     }
 
     @PostMapping(

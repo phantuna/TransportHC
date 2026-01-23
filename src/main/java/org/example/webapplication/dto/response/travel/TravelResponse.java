@@ -25,4 +25,6 @@ public class TravelResponse {
     private LocalDate endDate;
     private List<ExpenseResponse> expenses;
     private double totalExpense;
+
+
 }

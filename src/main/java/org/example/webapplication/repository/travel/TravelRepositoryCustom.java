@@ -1,7 +1,11 @@
 package org.example.webapplication.repository.travel;
 
+import org.example.webapplication.dto.response.travel.TravelResponse;
+import org.example.webapplication.dto.response.travel.TravelScheduleReportResponse;
 import org.example.webapplication.entity.Travel;
 import org.example.webapplication.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
@@ -17,6 +21,6 @@ public interface TravelRepositoryCustom {
     boolean existsTravel(String truckId, LocalDate startDate, String travelId
     );
     boolean existsActiveTravelToday(String truckId);
-
+    Page<TravelScheduleReportResponse> findTravelPage(Pageable pageable);
 
 }

@@ -90,7 +90,6 @@ public class InventoryService {
         return toResponse(saved);
     }
 
-
     @PreAuthorize("hasAuthority('MANAGE_INVENTORY')")
     public InventoryResponse inventoryUpdated (String id,InventoryRequest dto){
         Inventory inventory = inventoryRepository.findById(id)

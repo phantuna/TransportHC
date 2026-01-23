@@ -2,13 +2,15 @@ package org.example.webapplication.service;
 
 import org.example.webapplication.dto.request.truck.TruckExpenseRequest;
 import org.example.webapplication.dto.response.report.ExpenseReportDetailResponse;
-import org.example.webapplication.dto.response.report.ExpenseReportResponse;
 import org.example.webapplication.dto.response.expense.ExpenseResponse;
 import org.example.webapplication.dto.response.payroll.PayrollDetailResponse;
 import org.example.webapplication.dto.response.report.ExpenseSummaryResponse;
 import org.example.webapplication.dto.response.schedule.ScheduleDocumentResponse;
 import org.example.webapplication.dto.response.schedule.ScheduleReportResponse;
+import org.example.webapplication.dto.response.travel.TravelScheduleReportResponse;
+import org.example.webapplication.repository.expense.ExpenseRepository;
 import org.example.webapplication.repository.payroll.PayrollRepository;
+import org.example.webapplication.repository.schedule.ScheduleRepository;
 import org.example.webapplication.repository.travel.TravelRepository;
 import org.example.webapplication.repository.truck.TruckRepository;
 import org.example.webapplication.repository.user.UserRepository;
@@ -24,12 +26,16 @@ import org.example.webapplication.dto.response.travel.TravelScheduleResponse;
 import org.example.webapplication.entity.*;
 import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
-import org.example.webapplication.repository.*;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.PageImpl;
+
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +46,7 @@ public class ReportService {
     private final UserRepository userRepository;
     private final ScheduleRepository scheduleRepository;
     private final ExpenseService expenseService;
+    private final ExpenseRepository expenseRepository;
 
 
 
@@ -48,26 +55,25 @@ public class ReportService {
             int month,
             int year
     ) {
-        double baseSalary = driver.getBaseSalary();
-
         LocalDate from = LocalDate.of(year, month, 1);
         LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
 
-
-        double expenseSalary = payrollRepository.sumApproedExpenseByDriverAndMonth(driver, from, to);
+        double expenseSalary = Optional.ofNullable(
+                payrollRepository.sumApproedExpenseByDriverAndMonth(driver, from, to)
+        ).orElse(0.0);
 
         double advance = payrollRepository.findByUser(driver)
                 .map(Payroll::getAdvanceSalary)
                 .orElse(0.0);
 
-        double total = baseSalary + expenseSalary - advance;
+        double total = driver.getBaseSalary() + expenseSalary - advance;
 
         return PayrollDetailResponse.builder()
                 .driverId(driver.getId())
                 .name(driver.getUsername())
                 .month(month)
                 .year(year)
-                .baseSalary(baseSalary)
+                .baseSalary(driver.getBaseSalary())
                 .expenseSalary(expenseSalary)
                 .advanceSalary(advance)
                 .totalSalary(total)
@@ -84,7 +90,6 @@ public class ReportService {
 
         User driver = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.DRIVER_NOT_FOUND));
-
         return buildPayrollDetail(driver, month, year);
     }
 
@@ -97,44 +102,29 @@ public class ReportService {
             int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
+        List<PayrollDetailResponse> data =
+                payrollRepository.payrollByMonth(month, year, pageable);
 
-        Page<User> usersPage = userRepository.findAllByRole_Id("R_DRIVER",pageable);
+        long total = userRepository.countByRoles_Id("R_DRIVER");
 
-
-        return usersPage.map(driver ->
-                buildPayrollDetail(driver, month, year)
-        );
+        return new PageImpl<>(data, pageable, total);
     }
 
 
-
     @PreAuthorize("hasAuthority('VIEW_REPORT')")
-    public ExpenseReportResponse TruckExpenseReport (TruckExpenseRequest request){
-        Truck truck =truckRepository.findById(request.getTruckId())
+    public Page<ExpenseResponse> TruckExpenseReport(TruckExpenseRequest request, int page, int size) {
+        Truck truck = truckRepository.findById(request.getTruckId())
                 .orElseThrow(() -> new AppException(ErrorCode.TRUCK_NOT_FOUND));
 
-        List<Travel> travels = travelRepository.findByTruck_IdAndStartDateBetween(request.getTruckId(), request.getFromDate(),request.getToDate());
-        double total = 0;
-        List<ExpenseResponse> responses = new ArrayList<>();
-        String driverName = truck.getDriver().getUsername();
-        for(Travel travel : travels){
-            for(Expense expense : travel.getExpenses()){
-                if (expense.getApproval() == ApprovalStatus.APPROVED){
-                    total += expense.getExpense();
-                }
-                ExpenseResponse expenseResponse = expenseService.toResponse(expense, driverName);
-                responses.add(expenseResponse);
-            }
-        }
+        Pageable pageable = PageRequest.of(page, size);
 
-        return ExpenseReportResponse.builder()
-                .truckId(truck.getId())
-                .licensePlate(truck.getLicensePlate())
-                .expenses(responses)
-                .totalExpense(total)
-                .driverName(driverName)
-                .incurredDate(LocalDate.now())
-                .build();
+        return expenseRepository.findExpenseReport(
+                request.getTruckId(),
+                request.getFromDate(),
+                request.getToDate(),
+                truck.getDriver().getUsername(),
+                pageable
+        );
     }
 
     @PreAuthorize("hasAuthority('VIEW_REPORT')")
@@ -163,77 +153,70 @@ public class ReportService {
 
     @PreAuthorize("hasAuthority('VIEW_REPORT')")
     public ScheduleReportResponse scheduleReport(String truckId) {
+
         Truck truck = truckRepository.findById(truckId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRUCK_NOT_FOUND));
 
+        // 1️⃣ LẤY DATA TỪ DSL
+        List<TravelScheduleReportResponse> travelSummaries =
+                scheduleRepository.getTravelScheduleReport(truckId);
 
-        List<Travel> travels = travelRepository.findByTruck_Id(truckId);
+        List<ExpenseResponse> expenses =
+                scheduleRepository.findExpensesByTravel(truckId);
+
+        List<ScheduleDocumentResponse> documents =
+                scheduleRepository.findDocumentsByTravel(truckId);
+
+        // 2️⃣ GROUP DATA (service làm việc này là ĐÚNG CHỖ)
+        Map<String, List<ExpenseResponse>> expenseMap =
+                expenses.stream()
+                        .collect(Collectors.groupingBy(ExpenseResponse::getTravelId));
+
+        Map<String, List<ScheduleDocumentResponse>> documentMap =
+                documents.stream()
+                        .collect(Collectors.groupingBy(ScheduleDocumentResponse::getScheduleId));
+
+        // 3️⃣ BUILD RESPONSE
         List<TravelScheduleResponse> travelResponses = new ArrayList<>();
-        double  grandTotal = 0;
+        double grandTotal = 0;
 
-        for (Travel travel : travels) {
+        for (TravelScheduleReportResponse summary : travelSummaries) {
 
-            double travelTotal = 0;
-            if (travel.getSchedule() != null) {
-                travelTotal += travel.getSchedule().getExpense();
-            }
+            String travelId = summary.getTravelId();
 
-            List<ExpenseResponse> expenseResponses = new ArrayList<>();
+            List<ExpenseResponse> expenseResponses =
+                    expenseMap.getOrDefault(travelId, List.of());
 
-            if (travel.getExpenses() != null) {
-                for (Expense expense : travel.getExpenses()) {
-                    if (expense.getApproval() == ApprovalStatus.APPROVED) {
-                        travelTotal += expense.getExpense();
-                    }
-                    String driverName = null;
-                    if (truck.getDriver() != null) {
-                        driverName = truck.getDriver().getUsername();
-                    }
-                    ExpenseResponse response = expenseService.toResponse(expense, driverName);
-                    expenseResponses.add(response);
-                }
-            }
+            List<ScheduleDocumentResponse> documentResponses =
+                    documentMap.getOrDefault(summary.getScheduleId(), List.of());
 
-            List<ScheduleDocumentResponse> documentResponses = new ArrayList<>();
-            if (travel.getSchedule() != null && travel.getSchedule().getDocuments() != null) {
-                for (ScheduleDocument doc : travel.getSchedule().getDocuments()) {
-                    documentResponses.add(
-                            ScheduleDocumentResponse.builder()
-                                    .fileName(doc.getFileName())
-                                    .fileUrl(doc.getFileUrl())
-                                    .fileType(doc.getFileType())
-                                    .fileSize(doc.getFileSize())
-                                    .build()
-                    );
-                }
-            }
-
+            double travelTotal = summary.getTotalExpense();
             grandTotal += travelTotal;
 
             travelResponses.add(
                     TravelScheduleResponse.builder()
-                            .travelId(travel.getId())
+                            .travelId(travelId)
                             .scheduleName(
-                                    travel.getSchedule().getStartPlace() + " - " +
-                                            travel.getSchedule().getEndPlace()
+                                    summary.getStartPlace() == null
+                                            ? "No schedule"
+                                            : summary.getStartPlace() + " - " + summary.getEndPlace()
                             )
-                            .startDate(travel.getStartDate())
-                            .endDate(travel.getEndDate())
+                            .startDate(summary.getStartDate())
+                            .endDate(summary.getEndDate())
                             .expense(expenseResponses)
                             .document(documentResponses)
                             .totalExpense(travelTotal)
-
                             .build()
             );
         }
 
-        return ScheduleReportResponse.builder()
-                .truckId(truck.getId())
-                .licensePlate(truck.getLicensePlate())
-                .travels(travelResponses)
-                .grandTotalExpense(grandTotal)
+            return ScheduleReportResponse.builder()
+                    .truckId(truck.getId())
+                    .licensePlate(truck.getLicensePlate())
+                    .travels(travelResponses)
+                    .grandTotalExpense(grandTotal)
+                    .build();
+        }
 
-                .build();
-    }
 
 }

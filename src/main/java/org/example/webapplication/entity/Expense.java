@@ -23,7 +23,7 @@ public class Expense extends Base{
     @Enumerated(EnumType.STRING)
     private TypeExpense type;
 
-    private double expense;
+    private Double expense;
     private String description;
     private LocalDate incurredDate;
 

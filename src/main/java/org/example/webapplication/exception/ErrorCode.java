@@ -96,6 +96,9 @@ public enum ErrorCode {
     GANMOOC_REQUIRED(107, "GANMOOC_REQUIRED"),
 
     INVALID_INVENTORY_STATUS(108, "Invalid inventory status"),
+    SCHEDULE_ALREADY_IN_THIS_STATUS(109,"Status Schedule already exists"),
+    PAYROLL_NOT_FOUND(110,"Payroll not found"),
+
     ;
 
 

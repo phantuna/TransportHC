@@ -8,10 +8,13 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 public class TravelScheduleReportResponse {
-    String travelId;
-    LocalDate startDate;
-    LocalDate endDate;
-    String startPlace;
-    String endPlace;
-    Double totalExpense;
+    private String travelId;
+    private String truckPlate;
+    private String driverName;
+    private String startPlace;
+    private String endPlace;
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private String scheduleId;
+    private Double totalExpense;
 }

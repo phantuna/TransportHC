@@ -4,9 +4,13 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.example.webapplication.dto.response.travel.TravelResponse;
 import org.example.webapplication.dto.response.travel.TravelScheduleReportResponse;
 import org.example.webapplication.entity.*;
 import org.example.webapplication.enums.ApprovalStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -19,7 +23,8 @@ public class TravelRepositoryCustomImpl implements TravelRepositoryCustom{
     private final QTravel qTravel = QTravel.travel;
     private final QSchedule qSchedule = QSchedule.schedule;
     private final QExpense  qExpense = QExpense.expense1;
-
+    private final QTruck qTruck = QTruck.truck;
+    private final QUser qUser = QUser.user;
 
     private BooleanBuilder buildWhere(
             String truckId,
@@ -93,34 +98,45 @@ public class TravelRepositoryCustomImpl implements TravelRepositoryCustom{
                 .fetchFirst() != null;
     };
 
+    @Override
+    public Page<TravelScheduleReportResponse> findTravelPage(Pageable pageable) {
+        List<TravelScheduleReportResponse> data =
+                queryFactory
+                        .select(Projections.constructor(
+                                TravelScheduleReportResponse.class,
+                                qTravel.id,
+                                qTruck.licensePlate,
+                                qUser.username,
+                                qSchedule.startPlace,
+                                qSchedule.endPlace,
+                                qTravel.startDate,
+                                qTravel.endDate,
+                                qTravel.schedule.id,
+                                qExpense.expense.sum().coalesce(0.0)
+                        ))
+                        .from(qTravel)
+                        .leftJoin(qTravel.truck, qTruck)
+                        .leftJoin(qTravel.user, qUser)
+                        .leftJoin(qTravel.schedule, qSchedule)
+                        .leftJoin(qTravel.expenses, qExpense)
+                        .groupBy(
+                                qTravel.id,
+                                qTruck.licensePlate,
+                                qUser.username,
+                                qSchedule.startPlace,
+                                qSchedule.endPlace
+                        )
+                        .offset(pageable.getOffset())
+                        .limit(pageable.getPageSize())
+                        .fetch();
 
-    public List<TravelScheduleReportResponse> getTravelScheduleReport(String truckId) {
-        return queryFactory
-                .select(Projections.constructor(
-                        TravelScheduleReportResponse.class,
-                        qTravel.id,
-                        qTravel.startDate,
-                        qTravel.endDate,
-                        qSchedule.startPlace,
-                        qSchedule.endPlace,
-                        qSchedule.expense
-                                .add(
-                                        qExpense.expense.sum().coalesce(0.0)
-                                )
-                ))
+        long total = queryFactory
+                .select(qTravel.count())
                 .from(qTravel)
-                .leftJoin(qTravel.schedule, qSchedule)
-                .leftJoin(qTravel.expenses, qExpense)
-                .where(
-                        qTravel.truck.id.eq(truckId),
-                        qExpense.approval.eq(ApprovalStatus.APPROVED)
-                                .or(qExpense.id.isNull())
-                )
-                .groupBy(
-                        qTravel.id,
-                        qSchedule.id
-                )
-                .fetch();
+                .fetchOne();
+
+        return new PageImpl<>(data, pageable, total);
     }
+
 
 }

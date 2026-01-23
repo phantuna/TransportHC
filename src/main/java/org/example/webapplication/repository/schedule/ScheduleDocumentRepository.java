@@ -1,4 +1,4 @@
-package org.example.webapplication.repository;
+package org.example.webapplication.repository.schedule;
 
 import org.example.webapplication.entity.ScheduleDocument;
 import org.springframework.data.jpa.repository.JpaRepository;

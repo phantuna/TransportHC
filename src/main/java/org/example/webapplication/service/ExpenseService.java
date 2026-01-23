@@ -44,7 +44,6 @@ public class ExpenseService {
                 .build();
     }
 
-
     @PreAuthorize("hasAuthority('CREATE_EXPENSE')")
     public ExpenseResponse createdExpense(ExpenseRequest dto){
         Travel travel = travelRepository.findById(dto.getTravelId())
@@ -113,6 +112,7 @@ public class ExpenseService {
                 toResponse(expense, expense.getModifiedBy())
         );
     }
+
     @PreAuthorize("hasAuthority('VIEW_EXPENSE')")
     public ExpenseResponse getExpenseById(String id) {
         Expense expense = expenseRepository.findById(id)

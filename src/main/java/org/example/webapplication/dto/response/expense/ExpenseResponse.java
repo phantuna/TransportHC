@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 public class ExpenseResponse {
     private String id;
     private TypeExpense type;
-    private double expense;
+    private Double expense;
     private String description;
     private ApprovalStatus approval;
     private String travelId;

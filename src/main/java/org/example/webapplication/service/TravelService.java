@@ -2,6 +2,7 @@ package org.example.webapplication.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.webapplication.dto.response.travel.TravelScheduleReportResponse;
 import org.example.webapplication.enums.ApprovalStatus;
 import org.example.webapplication.enums.TruckStatus;
 import org.example.webapplication.dto.request.travel.TravelRequest;
@@ -13,7 +14,7 @@ import org.example.webapplication.entity.Travel;
 import org.example.webapplication.entity.Truck;
 import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
-import org.example.webapplication.repository.ScheduleRepository;
+import org.example.webapplication.repository.schedule.ScheduleRepository;
 import org.example.webapplication.repository.travel.TravelRepository;
 import org.example.webapplication.repository.truck.TruckRepository;
 import org.springframework.data.domain.Page;
@@ -91,7 +92,6 @@ public class TravelService {
 
     @PreAuthorize("hasAuthority('MANAGE_TRAVEL')")
     public TravelResponse createdTravel(TravelRequest dto) {
-
         if (dto.getStartDate() == null || dto.getEndDate() == null) {
             throw new AppException(ErrorCode.START_DATE_AND_END_DATE_NOT_NULL);
         }
@@ -101,15 +101,13 @@ public class TravelService {
 
         Truck truck = truckRepository.findById(dto.getTruckId())
                 .orElseThrow(() -> new AppException(ErrorCode.TRUCK_NOT_FOUND));
-
         Schedule schedule = scheduleRepository.findById(dto.getScheduleId())
                 .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
 
         boolean existedSameDay = travelRepository
                 .existsByTruck_IdAndStartDate(
                         truck.getId(),
-                        dto.getStartDate()
-                );
+                        dto.getStartDate());
 
         if (existedSameDay) {
             throw new AppException(ErrorCode.TRUCK_ALREADY_IN_TRAVEL_SAME_DAY);
@@ -121,7 +119,6 @@ public class TravelService {
         travel.setUser(truck.getDriver());
         travel.setStartDate(dto.getStartDate());
         travel.setEndDate(dto.getEndDate());
-
         Travel saved = travelRepository.save(travel);
 
         return toResponse(saved);
@@ -129,7 +126,6 @@ public class TravelService {
 
 
     public TravelResponse getTravelById(String travelId) {
-
         Travel travel = travelRepository.findById(travelId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAVEL_NOT_FOUND));
 
@@ -138,12 +134,10 @@ public class TravelService {
 
 
     @PreAuthorize("hasAuthority('VIEW_TRAVEL') or hasAuthority('MANAGE_TRAVEL')")
-    public Page<TravelResponse> getALlTravels(int page, int size) {
+    public Page<TravelScheduleReportResponse> getALlTravels(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
+        return  travelRepository.findTravelPage(pageable);
 
-        Page<Travel> travelPage = travelRepository.findAll(pageable);
-
-        return travelPage.map(this::toResponse);
     }
 
     @PreAuthorize("hasAuthority('MANAGE_TRAVEL')")

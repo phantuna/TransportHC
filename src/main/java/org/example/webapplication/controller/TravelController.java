@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.example.webapplication.dto.request.travel.TravelRequest;
 import org.example.webapplication.dto.response.travel.TravelResponse;
+import org.example.webapplication.dto.response.travel.TravelScheduleReportResponse;
 import org.example.webapplication.service.TravelService;
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,8 +32,8 @@ public class TravelController {
 
     @GetMapping("/getAll")
     @PreAuthorize("hasAuthority('VIEW_TRAVEL') or hasAuthority('MANAGE_TRAVEL')")
-    public Page<TravelResponse> getAllTravels(@RequestParam(defaultValue = "0") int page,
-                                              @RequestParam(defaultValue = "10") int size){
+    public Page<TravelScheduleReportResponse> getAllTravels(@RequestParam(defaultValue = "0") int page,
+                                                            @RequestParam(defaultValue = "10") int size){
         return travelService.getALlTravels(page,size);
     }
 
