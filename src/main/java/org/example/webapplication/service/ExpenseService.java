@@ -9,6 +9,8 @@ import org.example.webapplication.dto.response.expense.ExpenseResponse;
 import org.example.webapplication.entity.Expense;
 import org.example.webapplication.entity.Travel;
 import org.example.webapplication.entity.Truck;
+import org.example.webapplication.enums.PermissionKey;
+import org.example.webapplication.enums.PermissionType;
 import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.expense.ExpenseRepository;
@@ -21,13 +23,16 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ExpenseService {
     public final ExpenseRepository expenseRepository;
     public final TravelRepository travelRepository;
+    public final PermissionService  permissionService;
 
-    public ExpenseResponse toResponse(Expense expense, String username) {
+    private ExpenseResponse toResponse(Expense expense, String username) {
         Truck truck = expense.getTravel().getTruck();
 
         return ExpenseResponse.builder()
@@ -44,8 +49,12 @@ public class ExpenseService {
                 .build();
     }
 
-    @PreAuthorize("hasAuthority('CREATE_EXPENSE')")
+    @Transactional
     public ExpenseResponse createdExpense(ExpenseRequest dto){
+        permissionService.getUser(
+                List.of(PermissionKey.CREATE),
+                PermissionType.EXPENSE
+        );
         Travel travel = travelRepository.findById(dto.getTravelId())
                 .orElseThrow(() -> new AppException(ErrorCode.TRAVEL_NOT_FOUND));
 
@@ -66,8 +75,12 @@ public class ExpenseService {
     }
 
     //manager- supervisor
-    @PreAuthorize("hasAuthority('APPROVE_EXPENSE')")
+    @Transactional
     public ExpenseResponse approvalExpense (String id){
+        permissionService.getUser(
+                List.of(PermissionKey.APPROVE),
+                PermissionType.EXPENSE
+        );
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         Expense expense = expenseRepository.findById(id)
@@ -79,8 +92,12 @@ public class ExpenseService {
         return toResponse(saved, username);
     }
 
-    @PreAuthorize("hasAuthority('UPDATE_EXPENSE')")
+    @Transactional
     public ExpenseResponse updatedExpense(String id , ExpenseRequest dto){
+        permissionService.getUser(
+                List.of(PermissionKey.UPDATE),
+                PermissionType.EXPENSE
+        );
         Travel travel = travelRepository.findById(dto.getTravelId())
                 .orElseThrow(() -> new AppException(ErrorCode.TRAVEL_NOT_FOUND));
 
@@ -102,8 +119,11 @@ public class ExpenseService {
         return toResponse(saved, username);
     }
 
-    @PreAuthorize("hasAuthority('MANAGER_EXPENSE') OR hasAuthority('VIEW_EXPENSE')")
     public Page<ExpenseResponse> getAllExpenses(int page, int size){
+        permissionService.getUser(
+                List.of(PermissionKey.MANAGE),
+                PermissionType.EXPENSE
+        );
         Pageable pageable = PageRequest.of(page, size);
 
         Page<Expense> expensePage = expenseRepository.findAll(pageable);
@@ -113,8 +133,11 @@ public class ExpenseService {
         );
     }
 
-    @PreAuthorize("hasAuthority('VIEW_EXPENSE')")
     public ExpenseResponse getExpenseById(String id) {
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW),
+                PermissionType.EXPENSE
+        );
         Expense expense = expenseRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.EXPENSE_NOT_FOUND));
         String modifyBy = expense.getModifiedBy();
@@ -122,9 +145,12 @@ public class ExpenseService {
         return toResponse(expense, modifyBy);
     }
 
-    @PreAuthorize("hasAuthority('MANAGER_EXPENSE')")
     @Transactional
     public void deleteExpense(String expenseId) {
+        permissionService.getUser(
+                List.of(PermissionKey.MANAGE),
+                PermissionType.EXPENSE
+        );
         Expense expense = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new AppException(ErrorCode.EXPENSE_NOT_FOUND));
 

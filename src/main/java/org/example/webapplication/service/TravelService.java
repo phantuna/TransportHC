@@ -4,6 +4,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.webapplication.dto.response.travel.TravelScheduleReportResponse;
 import org.example.webapplication.enums.ApprovalStatus;
+import org.example.webapplication.enums.PermissionKey;
+import org.example.webapplication.enums.PermissionType;
 import org.example.webapplication.enums.TruckStatus;
 import org.example.webapplication.dto.request.travel.TravelRequest;
 import org.example.webapplication.dto.response.expense.ExpenseResponse;
@@ -32,7 +34,7 @@ public class TravelService {
     private final TravelRepository travelRepository;
     private final TruckRepository truckRepository;
     private final ScheduleRepository scheduleRepository;
-
+    private final PermissionService  permissionService;
 
     public TravelResponse toResponse(Travel travel) {
 
@@ -90,8 +92,12 @@ public class TravelService {
                 .build();
     }
 
-    @PreAuthorize("hasAuthority('MANAGE_TRAVEL')")
+    @Transactional
     public TravelResponse createdTravel(TravelRequest dto) {
+        permissionService.getUser(
+                List.of(PermissionKey.MANAGE),
+                PermissionType.TRAVEL
+        );
         if (dto.getStartDate() == null || dto.getEndDate() == null) {
             throw new AppException(ErrorCode.START_DATE_AND_END_DATE_NOT_NULL);
         }
@@ -126,6 +132,10 @@ public class TravelService {
 
 
     public TravelResponse getTravelById(String travelId) {
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
+                PermissionType.TRAVEL
+        );
         Travel travel = travelRepository.findById(travelId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAVEL_NOT_FOUND));
 
@@ -133,16 +143,22 @@ public class TravelService {
     }
 
 
-    @PreAuthorize("hasAuthority('VIEW_TRAVEL') or hasAuthority('MANAGE_TRAVEL')")
     public Page<TravelScheduleReportResponse> getALlTravels(int page, int size) {
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
+                PermissionType.TRAVEL
+        );
         Pageable pageable = PageRequest.of(page, size);
         return  travelRepository.findTravelPage(pageable);
 
     }
 
-    @PreAuthorize("hasAuthority('MANAGE_TRAVEL')")
+    @Transactional
     public TravelResponse updateTravel(String travelId, TravelRequest dto) {
-
+        permissionService.getUser(
+                List.of(PermissionKey.MANAGE),
+                PermissionType.TRAVEL
+        );
         Travel travel = travelRepository.findById(travelId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAVEL_NOT_FOUND));
 
@@ -193,9 +209,12 @@ public class TravelService {
         return toResponse(saved);
     }
 
-    @PreAuthorize("hasAuthority('MANAGE_TRAVEL')")
     @Transactional
     public void deleteTravel(String travelId) {
+        permissionService.getUser(
+                List.of(PermissionKey.MANAGE),
+                PermissionType.TRAVEL
+        );
         Travel travel = travelRepository.findById(travelId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAVEL_NOT_FOUND));
 

@@ -47,14 +47,6 @@ public class ReportController {
         return reportService.payrollAllByMonth(month, year,page,size);
     }
 
-    @GetMapping("/truckExpense")
-    public Page<ExpenseResponse> TruckExpenseReport(
-            @Valid @RequestBody TruckExpenseRequest request,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size){
-        return reportService.TruckExpenseReport(request,page,size);
-    }
-
     @GetMapping("/allTruckExpense")
     public Page<ExpenseSummaryResponse> allTruckExpenseSummaryReport(
             @RequestParam(defaultValue = "0") int page,
@@ -79,7 +71,8 @@ public class ReportController {
 
     @GetMapping("/scheduleReport/{truckId}")
     @PreAuthorize("hasAuthority('VIEW_REPORT')")
-    public ScheduleReportResponse ScheduleReport(@NotBlank @PathVariable String truckId){
+    public ScheduleReportResponse ScheduleReport(
+            @NotBlank @PathVariable String truckId){
         return reportService.scheduleReport(truckId);
     }
 }

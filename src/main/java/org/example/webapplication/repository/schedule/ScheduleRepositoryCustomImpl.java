@@ -1,8 +1,6 @@
 package org.example.webapplication.repository.schedule;
 
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.Query;
-import com.querydsl.core.QueryFactory;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -13,6 +11,7 @@ import org.example.webapplication.dto.response.schedule.ScheduleResponse;
 import org.example.webapplication.dto.response.travel.TravelScheduleReportResponse;
 import org.example.webapplication.entity.*;
 import org.example.webapplication.enums.ApprovalStatus;
+import org.example.webapplication.repository.BaseRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -20,10 +19,11 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class ScheduleRepositoryCustomImpl implements ScheduleRepositoryCustom {
+public class ScheduleRepositoryCustomImpl extends BaseRepository implements ScheduleRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
     private final QSchedule qSchedule = QSchedule.schedule;
@@ -65,6 +65,25 @@ public class ScheduleRepositoryCustomImpl implements ScheduleRepositoryCustom {
 
         return build;
     }
+    private BooleanBuilder ExpenseWhere(String truckId , LocalDate from, LocalDate to,String driverName){
+        BooleanBuilder builder = new BooleanBuilder();
+        if(driverName != null && !driverName.isEmpty()){
+            builder.and(qUser.username.eq(driverName));
+        }
+
+        if (from != null && to != null) {
+            builder.and(qTravel.startDate.between(from, to));
+        } else if (from != null) {
+            builder.and(qTravel.startDate.goe(from));
+        } else if (to != null) {
+            builder.and(qTravel.startDate.loe(to));
+        }
+        if(truckId !=null && !truckId.isEmpty()){
+            builder.and(qTravel.truck.id.eq(truckId));
+        }
+
+        return builder;
+    }
     private BooleanBuilder documentByScheduleIdsWhere(List<String> scheduleIds) {
         BooleanBuilder build = new BooleanBuilder();
 
@@ -77,7 +96,7 @@ public class ScheduleRepositoryCustomImpl implements ScheduleRepositoryCustom {
 
 
     @Override
-    public List<TravelScheduleReportResponse> getTravelScheduleReport (String truckId){
+    public List<TravelScheduleReportResponse> getTravelScheduleReport (String truckId) {
             BooleanBuilder travelWhere = travelWhere(truckId,null,null);
 
             return queryFactory
@@ -91,16 +110,8 @@ public class ScheduleRepositoryCustomImpl implements ScheduleRepositoryCustom {
                             qTravel.startDate,
                             qTravel.endDate,
                             qSchedule.id,
-                            qSchedule.expense
-                                    .coalesce(0.0)
-                                    .add(
-                                            Expressions.cases()
-                                                    .when(qExpense.approval.eq(ApprovalStatus.APPROVED))
-                                                    .then(qExpense.expense)
-                                                    .otherwise(0.0)
-                                                    .sum()
-                                    )
-                                    ))
+                            totalExpense(qSchedule,qExpense)
+                            ))
                     .from(qTravel)
                     .leftJoin(qTravel.schedule, qSchedule)
                     .leftJoin(qTravel.expenses, qExpense)
@@ -114,7 +125,9 @@ public class ScheduleRepositoryCustomImpl implements ScheduleRepositoryCustom {
                             qSchedule.endPlace,
                             qSchedule.expense
                     )
+
                     .fetch();
+
         }
 
         @Override
@@ -207,5 +220,16 @@ public class ScheduleRepositoryCustomImpl implements ScheduleRepositoryCustom {
                 .fetch();
 
     }
+    @Override
+    public Double sumApprovedExpense(String truckId,LocalDate fromDate,LocalDate toDate){
+        BooleanBuilder builder = ExpenseWhere(truckId,fromDate,toDate,null);
+        return queryFactory
+                .select(qExpense.expense.sum())
+                .from(qExpense)
+                .join(qExpense.travel,qTravel)
+                .where(builder.and(qExpense.approval.eq(ApprovalStatus.APPROVED)))
+                .fetchOne();
+    }
+
 
 }

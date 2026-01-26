@@ -8,6 +8,8 @@ import org.example.webapplication.dto.response.report.ExpenseSummaryResponse;
 import org.example.webapplication.dto.response.schedule.ScheduleDocumentResponse;
 import org.example.webapplication.dto.response.schedule.ScheduleReportResponse;
 import org.example.webapplication.dto.response.travel.TravelScheduleReportResponse;
+import org.example.webapplication.enums.PermissionKey;
+import org.example.webapplication.enums.PermissionType;
 import org.example.webapplication.repository.expense.ExpenseRepository;
 import org.example.webapplication.repository.payroll.PayrollRepository;
 import org.example.webapplication.repository.schedule.ScheduleRepository;
@@ -31,10 +33,7 @@ import org.springframework.data.domain.PageImpl;
 
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,7 +41,7 @@ import java.util.stream.Collectors;
 public class ReportService {
     private final PayrollRepository payrollRepository;
     private final TruckRepository truckRepository;
-    private final TravelRepository travelRepository;
+    private final PermissionService permissionService;
     private final UserRepository userRepository;
     private final ScheduleRepository scheduleRepository;
     private final ExpenseService expenseService;
@@ -80,9 +79,11 @@ public class ReportService {
                 .build();
     }
 
-    @PreAuthorize("hasAuthority('VIEW_REPORT')")
     public PayrollDetailResponse myPayrollByMonth(int month, int year) {
-
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW),
+                PermissionType.REPORT
+        );
         String username = SecurityContextHolder
                 .getContext()
                 .getAuthentication()
@@ -93,7 +94,6 @@ public class ReportService {
         return buildPayrollDetail(driver, month, year);
     }
 
-    @PreAuthorize("hasAuthority('MANAGE_REPORT')")
     @Transactional
     public Page<PayrollDetailResponse> payrollAllByMonth(
             int month,
@@ -101,6 +101,10 @@ public class ReportService {
             int page,
             int size
     ) {
+        permissionService.getUser(
+                List.of(PermissionKey.MANAGE),
+                PermissionType.REPORT
+        );
         Pageable pageable = PageRequest.of(page, size);
         List<PayrollDetailResponse> data =
                 payrollRepository.payrollByMonth(month, year, pageable);
@@ -111,33 +115,19 @@ public class ReportService {
     }
 
 
-    @PreAuthorize("hasAuthority('VIEW_REPORT')")
-    public Page<ExpenseResponse> TruckExpenseReport(TruckExpenseRequest request, int page, int size) {
-        Truck truck = truckRepository.findById(request.getTruckId())
-                .orElseThrow(() -> new AppException(ErrorCode.TRUCK_NOT_FOUND));
-
-        Pageable pageable = PageRequest.of(page, size);
-
-        return expenseRepository.findExpenseReport(
-                request.getTruckId(),
-                request.getFromDate(),
-                request.getToDate(),
-                truck.getDriver().getUsername(),
-                pageable
-        );
-    }
-
-    @PreAuthorize("hasAuthority('VIEW_REPORT')")
     public Page<ExpenseSummaryResponse> allTruckExpenseSummaryReport(
             int page,
             int size
     ) {
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW),
+                PermissionType.REPORT
+        );
         Pageable pageable = PageRequest.of(page, size);
         return truckRepository.getAllTruckExpenseSummary(pageable);
     }
 
 
-    @PreAuthorize("hasAuthority('VIEW_REPORT')")
     public Page<ExpenseReportDetailResponse> truckExpenseDetail(
             String truckId,
             LocalDate from,
@@ -145,15 +135,21 @@ public class ReportService {
             int page,
             int size
     ) {
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW),
+                PermissionType.REPORT
+        );
         Pageable pageable = PageRequest.of(page, size);
         return truckRepository.getExpenseDetailsByTruck(
                 truckId, from, to, pageable
         );
     }
 
-    @PreAuthorize("hasAuthority('VIEW_REPORT')")
     public ScheduleReportResponse scheduleReport(String truckId) {
-
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW),
+                PermissionType.REPORT
+        );
         Truck truck = truckRepository.findById(truckId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRUCK_NOT_FOUND));
 
@@ -197,13 +193,11 @@ public class ReportService {
             );
         }
 
-            return ScheduleReportResponse.builder()
-                    .truckId(truck.getId())
-                    .licensePlate(truck.getLicensePlate())
-                    .travels(travelResponses)
-                    .grandTotalExpense(grandTotal)
-                    .build();
-        }
-
-
+        return ScheduleReportResponse.builder()
+                .truckId(truck.getId())
+                .licensePlate(truck.getLicensePlate())
+                .travels(travelResponses)
+                .grandTotalExpense(grandTotal)
+                .build();
+    }
 }

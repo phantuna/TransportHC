@@ -26,13 +26,13 @@ public class UserController {
         return userService.createdUser(request, "R_DRIVER");
     }
 
-    @PostAuthorize("hasAuthority('MANAGE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/accountant/created")
     public UserResponse createdAccountant(@RequestBody @Valid UserRequest request) {
         return userService.createdUser(request, "R_ACCOUNTANT");
     }
 
-    @PostAuthorize("hasAuthority('MANAGE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/manager/created")
     public UserResponse createdManager(@RequestBody @Valid UserRequest request) {
         return userService.createdUser(request, "R_MANAGER");

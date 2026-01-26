@@ -32,6 +32,7 @@ public class ApplicationConfig {
             Role adminRole = roleRepository.findById("R_ADMIN")
                     .orElseGet(() -> {
                         Role r = Role.builder()
+                                .id("R_ADMIN")
                                 .name("R_ADMIN")
                                 .description("Administrator role")
                                 .build();

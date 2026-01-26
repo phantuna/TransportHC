@@ -2,6 +2,7 @@ package org.example.webapplication.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -26,6 +27,8 @@ public class Base {
 
     @LastModifiedBy
     private String modifiedBy;
+    @CreatedBy
+    private String createdBy;
 
     @Column(nullable = false)
     private Integer deleted = 0;

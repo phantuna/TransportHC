@@ -29,8 +29,9 @@ public enum ErrorCode {
     MISSING_TOKEN(4003,"Missing token"),
     INVALID_PASSWORD(4004,"Invalid password"),
     FORBIDDEN(4005,"You not have permission to perform this operation"),
+    UNAUTHORIZED(4006,"You not permisison"),
 
-    UNAUTHENTICATED(5000,"Unauthenticated "),//ko dang nhap
+    UNAUTHENTICATED(5000,"You not log in "),//ko dang nhap
     ACCESS_DENIED(5001,"You do not have permission to access this resource"),
     INVALID_PERMISSIONS(5003,"Cannot parse permissions from token"),
     PERMISSION_NOT_FOUND(5004,"Permission not found"),

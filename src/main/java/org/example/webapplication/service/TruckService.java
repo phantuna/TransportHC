@@ -6,6 +6,8 @@ import org.example.webapplication.dto.request.truck.TruckRequest;
 import org.example.webapplication.dto.response.truck.TruckResponse;
 import org.example.webapplication.entity.Truck;
 import org.example.webapplication.entity.User;
+import org.example.webapplication.enums.PermissionKey;
+import org.example.webapplication.enums.PermissionType;
 import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.travel.TravelRepository;
@@ -17,12 +19,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class TruckService {
     private final TravelRepository  travelRepository;
     private final TruckRepository truckRepository;
     private final UserRepository userRepository;
+    private final PermissionService permissionService;
 
 
     public TruckResponse toResponse(Truck truck, User driver) {
@@ -37,9 +42,12 @@ public class TruckService {
                 .build();
     }
 
-    @PreAuthorize("hasAuthority('MANAGE_TRUCK')")
+    @Transactional
     public TruckResponse createdTruck(TruckRequest dto) {
-
+        permissionService.getUser(
+                List.of(PermissionKey.CREATE),
+                PermissionType.TRUCK
+        );
         if (dto.getLicensePlate() == null || dto.getLicensePlate().isBlank()) {
             throw new AppException(ErrorCode.INVALID_LICENSE_PLATE);
         }
@@ -74,8 +82,12 @@ public class TruckService {
 
 
     // manager - supervisor
-    @PreAuthorize("hasAuthority('MANAGE_TRUCK')")
+    @Transactional
     public TruckResponse updatedTruck(TruckRequest dto, String truckId) {
+        permissionService.getUser(
+                List.of(PermissionKey.UPDATE),
+                PermissionType.TRUCK
+        );
         boolean hasTravelToday = travelRepository.existsActiveTravelToday(truckId);
 
         if (hasTravelToday) {
@@ -112,9 +124,11 @@ public class TruckService {
     }
 
 
-
-    @PreAuthorize("hasAuthority('MANAGE_TRUCK') or hasAuthority('VIEW_TRUCK')")
     public Page<TruckResponse> getAllTrucks(int page, int size){
+        permissionService.getUser(
+                List.of(PermissionKey.MANAGE,PermissionKey.VIEW),
+                PermissionType.TRUCK
+        );
         Pageable pageable = PageRequest.of(page, size);
         Page<Truck> truckPage = truckRepository.findAll(pageable);
 
@@ -124,10 +138,12 @@ public class TruckService {
         });
     }
 
-
-    @PreAuthorize("hasAuthority('MANAGE_TRUCK')")
     @Transactional
     public void deleteTruck(String truckId) {
+        permissionService.getUser(
+                List.of(PermissionKey.MANAGE),
+                PermissionType.TRUCK
+        );
         Truck truck = truckRepository.findById(truckId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRUCK_NOT_FOUND));
 

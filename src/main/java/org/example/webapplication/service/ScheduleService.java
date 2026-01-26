@@ -11,6 +11,8 @@ import org.example.webapplication.dto.response.schedule.ScheduleResponse;
 import org.example.webapplication.entity.Schedule;
 import org.example.webapplication.entity.ScheduleDocument;
 import org.example.webapplication.entity.User;
+import org.example.webapplication.enums.PermissionKey;
+import org.example.webapplication.enums.PermissionType;
 import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.schedule.ScheduleDocumentRepository;
@@ -43,6 +45,8 @@ public class ScheduleService {
     private final UserRepository userRepository;
     private final ScheduleRepository scheduleRepository;
     private final ScheduleDocumentRepository scheduleDocumentRepository;
+    private final PermissionService permissionService;
+
     @Value("${file.upload-dir}")
     private String uploadPath ;
 
@@ -80,9 +84,12 @@ public class ScheduleService {
                 .build();
     }
 
-
-    @PreAuthorize("hasAuthority('CREATE_SCHEDULE')")
+    @Transactional
     public ScheduleResponse createdSchedule (ScheduleRequest dto){
+        permissionService.getUser(
+                List.of(PermissionKey.CREATE),
+                PermissionType.SCHEDULE
+        );
         String start = dto.getStartPlace().trim();
         String end = dto.getEndPlace().trim();
         if (start.equalsIgnoreCase(end)) {
@@ -113,9 +120,11 @@ public class ScheduleService {
         return toResponse(saved);
     }
 
-    @PreAuthorize("hasAuthority('MANAGER_SCHEDULE') OR hasAuthority('VIEW_SCHEDULE')")
     public Page<ScheduleResponse> getAllSchedules(int page, int size) {
-
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
+                PermissionType.SCHEDULE
+        );
         Page<Schedule> schedulePage =
                 scheduleRepository.findAll(PageRequest.of(page, size));
 
@@ -123,8 +132,11 @@ public class ScheduleService {
     }
 
 
-    @PreAuthorize("hasAuthority('VIEW_SCHEDULE')")
     public Page<ScheduleResponse> getScheduleByUsername(int page, int size){
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW),
+                PermissionType.SCHEDULE
+        );
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
@@ -157,8 +169,12 @@ public class ScheduleService {
 
     }
 
-    @PreAuthorize("hasAuthority('APPROVE_SCHEDULE')")
+    @Transactional
     public ScheduleResponse approvalSchedule(String id, ApprovalStatus target) {
+        permissionService.getUser(
+                List.of(PermissionKey.APPROVE),
+                PermissionType.SCHEDULE
+        );
         Schedule schedule = scheduleRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
 
@@ -186,8 +202,12 @@ public class ScheduleService {
         return toResponse(saved);
     }
 
-    @PreAuthorize("hasAuthority('UPDATE_SCHEDULE')")
+    @Transactional
     public ScheduleResponse updateSchedule(String scheduleId, ScheduleRequest dto){
+        permissionService.getUser(
+                List.of(PermissionKey.UPDATE),
+                PermissionType.SCHEDULE
+        );
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
         schedule.setStartPlace(dto.getStartPlace());
@@ -200,9 +220,12 @@ public class ScheduleService {
         return response;
     }
 
-    @PreAuthorize("hasAuthority('UPDATE_SCHEDULE_DOCUMENT') OR hasAuthority('MANAGE_SCHEDULE') ")
     @Transactional
     public ScheduleDocumentResponse uploadDocument(String scheduleId, MultipartFile file) throws IOException {
+        permissionService.getUser(
+                List.of(PermissionKey.UPDATE),
+                PermissionType.SCHEDULE_DOCUMENT
+        );
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
 
@@ -243,9 +266,12 @@ public class ScheduleService {
 
     }
 
-    @PreAuthorize("hasAuthority('MANAGER_SCHEDULE')")
     @Transactional
     public void deleteSchedule(String scheduleId) {
+        permissionService.getUser(
+                List.of(PermissionKey.MANAGE),
+                PermissionType.SCHEDULE
+        );
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
 

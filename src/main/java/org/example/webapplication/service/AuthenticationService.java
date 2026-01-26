@@ -34,7 +34,7 @@ public class AuthenticationService {
         List<String> permissions = driver.getRoles()
                 .stream()
                 .flatMap(role -> role.getPermissions().stream())
-                .map(Permission::getPermission)
+                .map(p -> p.getPermission_key().name() + "_" + p.getPermission_type().name())
                 .distinct()
                 .toList();
 

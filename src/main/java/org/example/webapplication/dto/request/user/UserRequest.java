@@ -20,7 +20,7 @@ public class UserRequest {
     private String username;
 
     @NotEmpty(message = "PASSWORD_NOT_NULL")
-    @Min(value = 5, message = "PASSWORD_NOT_VALID")
+    @Size(min = 5, message = "PASSWORD_NOT_VALID")
     private String password;
 
     @Pattern(
@@ -32,7 +32,7 @@ public class UserRequest {
     @Past(message = "DATE_IN_PAST")
     private Date birthday;
 
-    private List<String > roleIds;
+    private List<String> roleIds;
 
 }
 

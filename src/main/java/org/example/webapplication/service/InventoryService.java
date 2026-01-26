@@ -16,6 +16,8 @@ import org.example.webapplication.entity.Invoice;
 import org.example.webapplication.entity.Item;
 import org.example.webapplication.entity.QInventory;
 import org.example.webapplication.enums.InventoryStatus;
+import org.example.webapplication.enums.PermissionKey;
+import org.example.webapplication.enums.PermissionType;
 import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.inventory.InventoryRepository;
@@ -45,7 +47,7 @@ public class InventoryService {
     private final InventoryRepository inventoryRepository;
     private final ItemRepository itemRepository;
     private final InvoiceRepository invoiceRepository;
-    private final UserRepository userRepository;
+    private final PermissionService  permissionService;
     private final QInventory qInventory = QInventory.inventory;
 
     public InventoryResponse toResponse(Inventory inventory) {
@@ -66,8 +68,11 @@ public class InventoryService {
     }
 
 
-    @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
     public InventoryResponse inventoryCreated (InventoryRequest dto){
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
+                PermissionType.INVENTORY
+        );
         Item item = itemRepository.findById(dto.getItemId())
                 .orElseThrow(()-> new AppException(ErrorCode.ITEM_NOT_FOUND));
         Invoice invoice = null;
@@ -90,8 +95,11 @@ public class InventoryService {
         return toResponse(saved);
     }
 
-    @PreAuthorize("hasAuthority('MANAGE_INVENTORY')")
     public InventoryResponse inventoryUpdated (String id,InventoryRequest dto){
+        permissionService.getUser(
+                List.of(PermissionKey.MANAGE),
+                PermissionType.INVENTORY
+        );
         Inventory inventory = inventoryRepository.findById(id)
                 .orElseThrow(()-> new AppException(ErrorCode.INVENTORY_NOT_FOUND));
 
@@ -121,8 +129,11 @@ public class InventoryService {
 
     }
 
-    @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
     public InventoryResponse getInventoryById(String id) {
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
+                PermissionType.INVENTORY
+        );
         Inventory inventory = inventoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.INVENTORY_NOT_FOUND));
 
@@ -130,9 +141,11 @@ public class InventoryService {
     }
 
 
-    @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
     public Page<InventoryResponse> getAllInventories(int page, int size) {
-
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
+                PermissionType.INVENTORY
+        );
         Pageable pageable = PageRequest.of(page, size);
 
         Page<Inventory> inventoryPage =
@@ -141,19 +154,24 @@ public class InventoryService {
         return inventoryPage.map(this::toResponse);
     }
 
-    @PreAuthorize("hasAuthority('MANAGE_INVENTORY')")
     @Transactional
     public void deleteInventory(String inventoryId) {
+        permissionService.getUser(
+                List.of(PermissionKey.MANAGE),
+                PermissionType.INVENTORY
+        );
         Inventory inventory = inventoryRepository.findById(inventoryId)
                 .orElseThrow(() -> new AppException(ErrorCode.INVENTORY_NOT_FOUND));
 
         inventoryRepository.delete(inventory);
     }
 
-    @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
+    @Transactional
     public List<InventorySummaryResponse> getInventorySummary() {
-
-
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
+                PermissionType.INVENTORY
+        );
         List<Tuple> results = inventoryRepository.getInventorySummary();
         List<InventorySummaryResponse> responses = new ArrayList<>();
 
@@ -172,8 +190,11 @@ public class InventoryService {
     }
 
     @Transactional
-    @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
     public void importFromExcel(MultipartFile file) {
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
+                PermissionType.INVENTORY
+        );
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             DataFormatter formatter = new DataFormatter();
             Sheet sheet = workbook.getSheetAt(0);
@@ -213,10 +234,12 @@ public class InventoryService {
     }
 
     @Transactional
-    @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
     public ByteArrayInputStream exportToExcel()
     throws IOException{
-
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
+                PermissionType.INVENTORY
+        );
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Inventory");
 
@@ -244,7 +267,7 @@ public class InventoryService {
         return new ByteArrayInputStream(out.toByteArray());
     }
 
-    @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
+    @Transactional
     public List<InventoryResponse> searchInventories(
             String itemId,
             InventoryStatus status,
@@ -252,7 +275,10 @@ public class InventoryService {
             LocalDate fromDate,
             LocalDate toDate
     ) {
-
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
+                PermissionType.INVENTORY
+        );
         List<Inventory> inventories = inventoryRepository.searchAndFilter(
                 itemId,
                 status,

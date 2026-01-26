@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
@@ -130,11 +131,12 @@ public class TravelRepositoryCustomImpl implements TravelRepositoryCustom{
                         .limit(pageable.getPageSize())
                         .fetch();
 
-        long total = queryFactory
+        long total = Optional.ofNullable(
+                queryFactory
                 .select(qTravel.count())
                 .from(qTravel)
-                .fetchOne();
-
+                .fetchOne()
+        ).orElse(0L);
         return new PageImpl<>(data, pageable, total);
     }
 

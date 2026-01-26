@@ -7,6 +7,7 @@ import org.example.webapplication.dto.response.travel.TravelScheduleReportRespon
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface ScheduleRepositoryCustom {
@@ -15,7 +16,11 @@ public interface ScheduleRepositoryCustom {
     List<ScheduleDocumentResponse> findDocumentsByTravel(String truckId);
     Page<ScheduleResponse> findSchedulePageByUsername(String username, Pageable pageable);
     List<ScheduleDocumentResponse> findDocumentsByScheduleIds(List<String> scheduleIds);
-
+    Double sumApprovedExpense(
+            String truckId,
+            LocalDate fromDate,
+            LocalDate toDate
+    );
 
 
 }
