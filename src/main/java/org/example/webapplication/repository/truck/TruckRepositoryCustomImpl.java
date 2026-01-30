@@ -5,6 +5,8 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.example.webapplication.dto.response.report.ExpenseReportDetailResponse;
 import org.example.webapplication.dto.response.report.ExpenseSummaryResponse;
+import org.example.webapplication.dto.response.schedule.ScheduleDailyTotalResponse;
+import org.example.webapplication.dto.response.truck.TruckScheduleReport;
 import org.example.webapplication.entity.*;
 import org.example.webapplication.enums.ApprovalStatus;
 import org.springframework.data.domain.Page;
@@ -23,9 +25,24 @@ public class TruckRepositoryCustomImpl implements TruckRepositoryCustom {
     private final JPAQueryFactory queryFactory;
     private final QTruck qTruck = QTruck.truck;
     private final QTravel qTravel = QTravel.travel;
+    private final QSchedule qSchedule = QSchedule.schedule;
     private final QUser qUser = QUser.user;
     private final QExpense qExpense = QExpense.expense1;
 
+
+
+
+//    public List<TruckScheduleReport> getTruckScheduleReport() {
+//        return queryFactory
+//                .select(qTruck.id,
+//                        qTruck.driver,
+//                        qTruck.licensePlate,
+//                        qTruck.ganMooc,
+//                        qTruck.createdDate,
+//                        qSchedule.startPlace,
+//                        qSchedule.endPlace)
+//
+//    }
     @Override
     public Page<ExpenseSummaryResponse> getAllTruckExpenseSummary(
             Pageable pageable

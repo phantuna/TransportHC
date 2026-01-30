@@ -51,6 +51,8 @@ public class InventoryService {
     private final QInventory qInventory = QInventory.inventory;
 
     public InventoryResponse toResponse(Inventory inventory) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
         return InventoryResponse.builder()
                 .inventoryId(inventory.getId())
                 .itemId(inventory.getItem().getId())
@@ -64,6 +66,8 @@ public class InventoryService {
                 )
                 .createdDate(inventory.getCreatedDate())
                 .status(inventory.getStatus())
+                .createdBy(username)
+                .modifiedBy(username)
                 .build();
     }
 
@@ -80,8 +84,7 @@ public class InventoryService {
             invoice = invoiceRepository.findById(dto.getInvoiceId())
                     .orElseThrow(() -> new AppException(ErrorCode.INVOICE_NOT_FOUND));
         }
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName();
+
 
         Inventory inventory = new Inventory();
         inventory.setItem(item);
@@ -89,7 +92,7 @@ public class InventoryService {
         inventory.setDescription(dto.getDescription()); // ví dụ: "Nhập kho 9/11"
         inventory.setCustomerName(dto.getCustomerName());
         inventory.setInvoice(invoice);
-        inventory.setStatus(dto.getStatus());// nếu có
+        inventory.setStatus(dto.getStatus());
 
         Inventory saved = inventoryRepository.save(inventory);
         return toResponse(saved);
@@ -120,6 +123,7 @@ public class InventoryService {
         inventory.setDescription(dto.getDescription());
         inventory.setCustomerName(dto.getCustomerName());
         inventory.setInvoice(invoice);
+        inventory.setModifiedBy(username);
 
         // 6. Save
         Inventory saved = inventoryRepository.save(inventory);

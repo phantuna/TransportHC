@@ -29,4 +29,7 @@ public class Travel extends Base {
 
     @OneToMany(mappedBy = "travel")
     private List<Expense> expenses = new ArrayList<>();
+
+    private Long tripCount;
+
 }

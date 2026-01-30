@@ -4,6 +4,7 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.example.webapplication.dto.response.schedule.ScheduleDailyTotalResponse;
 import org.example.webapplication.dto.response.travel.TravelResponse;
 import org.example.webapplication.dto.response.travel.TravelScheduleReportResponse;
 import org.example.webapplication.entity.*;
@@ -50,6 +51,27 @@ public class TravelRepositoryCustomImpl implements TravelRepositoryCustom{
             builder.and(qTravel.startDate.eq(date));
         }
         return builder;
+    }
+
+    public List<ScheduleDailyTotalResponse> countTripsPerDay_ByTravelTripCountSum(
+            String truckId, LocalDate from, LocalDate to
+    ) {
+        return queryFactory
+                .select(Projections.constructor(
+                        ScheduleDailyTotalResponse.class,
+                        qTravel.startDate,
+                        qTravel.tripCount.coalesce(0L).sum()
+                ))
+                .from(qTravel)
+                .join(qTravel.truck, qTruck)
+                .where(
+                        qTruck.id.eq(truckId),
+                        from != null ? qTravel.startDate.goe(from) : null,
+                        to != null ? qTravel.startDate.loe(to) : null
+                )
+                .groupBy(qTravel.startDate)
+                .orderBy(qTravel.startDate.asc())
+                .fetch();
     }
 
     @Override

@@ -29,4 +29,7 @@ public class InventoryResponse {
 
     @Enumerated(EnumType.STRING)
     private InventoryStatus status;
+
+    private String createdBy;
+    private String modifiedBy;
 }

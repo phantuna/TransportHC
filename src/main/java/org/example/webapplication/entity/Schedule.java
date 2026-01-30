@@ -24,7 +24,6 @@ public class Schedule extends Base{
 
     @Enumerated(EnumType.STRING)
     private ApprovalStatus approval;
-
     @ManyToMany
     @JoinTable(
             name = "schedule_driver",

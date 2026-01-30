@@ -15,21 +15,21 @@ import java.util.List;
 @NoArgsConstructor
 
 public class UserRequest {
-    @NotEmpty(message = "USERNAME_NOT_NULL")
-    @Size(min = 3,message ="USERNAME_NOT_VALID")
+    @NotEmpty(message = "validation.username.not_null")
+    @Size(min = 3,message ="validation.username.invalid")
     private String username;
 
-    @NotEmpty(message = "PASSWORD_NOT_NULL")
-    @Size(min = 5, message = "PASSWORD_NOT_VALID")
+    @NotEmpty(message = "validation.password.not_null")
+    @Size(min = 5, message = "validation.password.invalid")
     private String password;
 
     @Pattern(
             regexp = "^(0[0-9]{9})?$",
-            message = "PHONE_NOT_VALID"
+            message = "validation.phone.invalid"
     )
     private String phone;
 
-    @Past(message = "DATE_IN_PAST")
+    @Past(message = "validation.date.in_past")
     private Date birthday;
 
     private List<String> roleIds;
