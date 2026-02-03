@@ -84,8 +84,6 @@ public class InventoryService {
             invoice = invoiceRepository.findById(dto.getInvoiceId())
                     .orElseThrow(() -> new AppException(ErrorCode.INVOICE_NOT_FOUND));
         }
-
-
         Inventory inventory = new Inventory();
         inventory.setItem(item);
         inventory.setQuantity(dto.getQuantity());
@@ -93,8 +91,8 @@ public class InventoryService {
         inventory.setCustomerName(dto.getCustomerName());
         inventory.setInvoice(invoice);
         inventory.setStatus(dto.getStatus());
-
         Inventory saved = inventoryRepository.save(inventory);
+
         return toResponse(saved);
     }
 
@@ -105,16 +103,13 @@ public class InventoryService {
         );
         Inventory inventory = inventoryRepository.findById(id)
                 .orElseThrow(()-> new AppException(ErrorCode.INVENTORY_NOT_FOUND));
-
         Item item = itemRepository.findById(dto.getItemId())
                 .orElseThrow(()-> new AppException(ErrorCode.ITEM_NOT_FOUND));
-
         Invoice invoice = null;
         if (dto.getInvoiceId() != null) {
             invoice = invoiceRepository.findById(dto.getInvoiceId())
                     .orElseThrow(() -> new AppException(ErrorCode.INVOICE_NOT_FOUND));
         }
-
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
@@ -124,13 +119,9 @@ public class InventoryService {
         inventory.setCustomerName(dto.getCustomerName());
         inventory.setInvoice(invoice);
         inventory.setModifiedBy(username);
-
-        // 6. Save
         Inventory saved = inventoryRepository.save(inventory);
 
-        // 7. Trả response
         return toResponse(saved);
-
     }
 
     public InventoryResponse getInventoryById(String id) {
@@ -202,11 +193,9 @@ public class InventoryService {
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             DataFormatter formatter = new DataFormatter();
             Sheet sheet = workbook.getSheetAt(0);
-
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
-
                 String itemId = row.getCell(0).getStringCellValue().trim();
                 double quantity = row.getCell(1).getNumericCellValue();
                 String description = row.getCell(2).getStringCellValue();
@@ -222,13 +211,11 @@ public class InventoryService {
                     throw new AppException(ErrorCode.INVALID_INVENTORY_STATUS);
                 }                Item item = itemRepository.findById(itemId)
                         .orElseThrow(() -> new AppException(ErrorCode.ITEM_NOT_FOUND));
-
                 Inventory inventory = new Inventory();
                 inventory.setItem(item);
                 inventory.setQuantity(quantity);
                 inventory.setDescription(description);
                 inventory.setStatus(status);
-
                 inventoryRepository.save(inventory);
             }
 
@@ -246,16 +233,12 @@ public class InventoryService {
         );
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Inventory");
-
         Row header = sheet.createRow(0);
         header.createCell(0).setCellValue("Item ID");
         header.createCell(1).setCellValue("Quantity");
         header.createCell(2).setCellValue("Description");
         header.createCell(3).setCellValue("Status");
-
-
         List<Inventory> inventories = inventoryRepository.findAll();
-
         int rowIdx = 1;
         for (Inventory i : inventories) {
             Row row = sheet.createRow(rowIdx++);
@@ -263,9 +246,7 @@ public class InventoryService {
             row.createCell(1).setCellValue(i.getQuantity());
             row.createCell(2).setCellValue(i.getDescription());
             row.createCell(3).setCellValue(i.getStatus().name());
-
         }
-
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         workbook.write(out);
         return new ByteArrayInputStream(out.toByteArray());

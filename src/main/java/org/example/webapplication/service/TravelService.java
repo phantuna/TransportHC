@@ -24,8 +24,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -35,6 +39,7 @@ public class TravelService {
     private final TruckRepository truckRepository;
     private final ScheduleRepository scheduleRepository;
     private final PermissionService  permissionService;
+    private final QuartzService quartzTravelService;
 
     public TravelResponse toResponse(Travel travel) {
 
@@ -127,6 +132,27 @@ public class TravelService {
         travel.setEndDate(dto.getEndDate());
         Travel saved = travelRepository.save(travel);
 
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        Date fireTime = new Date(System.currentTimeMillis() + 60_000); // +1 phút
+
+                        System.out.println("AFTER COMMIT – schedule notify for travel = " + saved.getId());
+                        quartzTravelService.scheduleNotifyDriver(
+                                saved,
+                                fireTime
+//                                Date.from(
+//                                        saved.getStartDate()
+//                                                .plusDays(1)
+//                                                .atTime(7, 30)
+//                                                .atZone(ZoneId.systemDefault())
+//                                                .toInstant()
+//                                )
+                        );
+                    }
+                }
+        );
         return toResponse(saved);
     }
 
@@ -161,13 +187,10 @@ public class TravelService {
         );
         Travel travel = travelRepository.findById(travelId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAVEL_NOT_FOUND));
-
         Truck truck = truckRepository.findById(dto.getTruckId())
                 .orElseThrow(() -> new AppException(ErrorCode.TRUCK_NOT_FOUND));
-
         Schedule schedule = scheduleRepository.findById(dto.getScheduleId())
                 .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
-
         if (dto.getStartDate() == null || dto.getEndDate() == null) {
             throw new AppException(ErrorCode.START_DATE_AND_END_DATE_NOT_NULL);
         }
@@ -189,7 +212,6 @@ public class TravelService {
         if (existed) {
             throw new AppException(ErrorCode.TRUCK_ALREADY_IN_TRAVEL_TODAY);
         }
-
         if (travel.getExpenses() != null) {
             boolean hasApprovedExpense = travel.getExpenses().stream()
                     .anyMatch(e -> e.getApproval() == ApprovalStatus.APPROVED);
@@ -203,7 +225,6 @@ public class TravelService {
         travel.setUser(truck.getDriver());
         travel.setStartDate(dto.getStartDate());
         travel.setEndDate(dto.getEndDate());
-
         Travel saved = travelRepository.save(travel);
 
         return toResponse(saved);

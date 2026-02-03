@@ -24,33 +24,32 @@ public class ScheduleController {
     private final ScheduleService scheduleService;
 
     @PostMapping("/created")
-    @PreAuthorize("hasAuthority('CREATE_SCHEDULE')")
+    @PreAuthorize("isAuthenticated()")
     public ScheduleResponse createSchedule(@Valid @RequestBody ScheduleRequest request){
         return scheduleService.createdSchedule(request);
     }
 
     @PutMapping("/updated/{scheduleId}")
-    @PreAuthorize("hasAuthority('UPDATE_SCHEDULE')")
+    @PreAuthorize("isAuthenticated()")
     public ScheduleResponse updateSchedule(@Valid @RequestBody ScheduleRequest request,@PathVariable String scheduleId){
         return scheduleService.updateSchedule(scheduleId,request);
     }
 
     @PostMapping("/approval/{scheduleId}")
-    @PreAuthorize("hasAuthority('APPROVE_SCHEDULE')")
+    @PreAuthorize("isAuthenticated()")
     public ScheduleResponse approvalSchedule (@NotBlank @PathVariable String scheduleId, @RequestParam ApprovalStatus status){
         return scheduleService.approvalSchedule(scheduleId,status);
     }
 
     @GetMapping("/getAll")
-    @PreAuthorize("hasAuthority('MANAGER_SCHEDULE') OR hasAuthority('VIEW_SCHEDULE')")
+    @PreAuthorize("isAuthenticated()")
     public Page<ScheduleResponse> getAllSchedule(@RequestParam(defaultValue = "0") int page,
                                                  @RequestParam(defaultValue = "10") int size){
-
         return scheduleService.getAllSchedules(page,size);
     }
 
     @GetMapping("/getByUsername")
-    @PreAuthorize("hasAuthority('VIEW_SCHEDULE')")
+    @PreAuthorize("isAuthenticated()")
     public Page<ScheduleResponse> getScheduleByUsername(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
@@ -62,7 +61,7 @@ public class ScheduleController {
             value = "/{scheduleId}/documents",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    @PreAuthorize("hasAuthority('UPDATE_SCHEDULE_DOCUMENT') OR hasAuthority('MANAGE_SCHEDULE') ")
+    @PreAuthorize("isAuthenticated()")
     public ScheduleDocumentResponse upload(
             @Valid
             @PathVariable String scheduleId,
@@ -73,6 +72,7 @@ public class ScheduleController {
 
 
     @DeleteMapping ("/deleted/{id}")
+    @PreAuthorize("isAuthenticated()")
     public void deleteSchedule(@Valid @PathVariable String id){
         scheduleService.deleteSchedule(id);
     }

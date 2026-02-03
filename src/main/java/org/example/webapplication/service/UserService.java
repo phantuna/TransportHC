@@ -2,6 +2,7 @@ package org.example.webapplication.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.webapplication.dto.request.user.UpdateUserRequest;
 import org.example.webapplication.dto.request.user.UserRequest;
 import org.example.webapplication.dto.response.user.UserResponse;
 import org.example.webapplication.entity.Role_Permission.Role;
@@ -73,9 +74,7 @@ public class UserService {
                 .orElseThrow(() ->
                         new AppException(ErrorCode.ROLE_NOT_FOUND));
         driver.setRoles(List.of(driverRole));
-
         User saved = userRepository.save(driver);
-
         return toResponse(saved);
     }
 
@@ -96,8 +95,32 @@ public class UserService {
                 PermissionType.USER
         );
         return usersPage.map(this::toResponse);
-
     }
+
+    @Transactional
+    public UserResponse updateMyProfile(UpdateUserRequest dto) {
+
+        User currentUser = permissionService.getUser(
+                List.of(PermissionKey.VIEW),
+                PermissionType.USER
+        );
+
+        if (dto.getUsername() != null && !dto.getUsername().isBlank()) {
+            currentUser.setUsername(dto.getUsername());
+        }
+
+        if (dto.getPhone() != null) {
+            currentUser.setPhone(dto.getPhone());
+        }
+
+        if (dto.getBirthday() != null) {
+            currentUser.setBirthday(dto.getBirthday());
+        }
+
+        User saved = userRepository.save(currentUser);
+        return toResponse(saved);
+    }
+
 
 
     @Transactional

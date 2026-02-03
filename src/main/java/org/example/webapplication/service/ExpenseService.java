@@ -57,7 +57,6 @@ public class ExpenseService {
         );
         Travel travel = travelRepository.findById(dto.getTravelId())
                 .orElseThrow(() -> new AppException(ErrorCode.TRAVEL_NOT_FOUND));
-
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
@@ -100,10 +99,8 @@ public class ExpenseService {
         );
         Travel travel = travelRepository.findById(dto.getTravelId())
                 .orElseThrow(() -> new AppException(ErrorCode.TRAVEL_NOT_FOUND));
-
         Expense expense = expenseRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.EXPENSE_NOT_FOUND));
-
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
@@ -113,7 +110,6 @@ public class ExpenseService {
         expense.setTravel(travel);
         expense.setIncurredDate(dto.getIncurredDate());
         expense.setApproval(ApprovalStatus.PENDING_APPROVAL);
-
         Expense saved = expenseRepository.save(expense);
 
         return toResponse(saved, username);
@@ -125,9 +121,7 @@ public class ExpenseService {
                 PermissionType.EXPENSE
         );
         Pageable pageable = PageRequest.of(page, size);
-
         Page<Expense> expensePage = expenseRepository.findAll(pageable);
-
         return expensePage.map(expense ->
                 toResponse(expense, expense.getModifiedBy())
         );
@@ -141,7 +135,6 @@ public class ExpenseService {
         Expense expense = expenseRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.EXPENSE_NOT_FOUND));
         String modifyBy = expense.getModifiedBy();
-
         return toResponse(expense, modifyBy);
     }
 
@@ -153,7 +146,6 @@ public class ExpenseService {
         );
         Expense expense = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new AppException(ErrorCode.EXPENSE_NOT_FOUND));
-
         expenseRepository.delete(expense);
     }
 }

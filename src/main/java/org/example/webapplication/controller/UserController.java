@@ -3,6 +3,7 @@ package org.example.webapplication.controller;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import org.example.webapplication.dto.request.user.UpdateUserRequest;
 import org.example.webapplication.dto.request.user.UserRequest;
 import org.example.webapplication.dto.response.user.UserResponse;
 import org.example.webapplication.service.UserService;
@@ -38,14 +39,14 @@ public class UserController {
         return userService.createdUser(request, "R_MANAGER");
     }
 
-    @PreAuthorize("hasAuthority('MANAGE_USER') OR hasAuthority('VIEW_USER')  " )
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/driver/view")
     public UserResponse viewDriver() {
 
         return userService.getUserById();
     }
 
-    @PreAuthorize("hasAuthority('MANAGE_USER')  ")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/getAll")
     public Page<UserResponse> getAllUser( @RequestParam(defaultValue = "0") int page,
                                           @RequestParam(defaultValue = "10") int size) {
@@ -53,9 +54,16 @@ public class UserController {
         return userService.getAllUsers(page,size);
     }
 
+    @PutMapping("/update")
+    @PreAuthorize("isAuthenticated()")
+    public UserResponse updateMyProfile(
+            @RequestBody UpdateUserRequest request
+    ) {
+        return userService.updateMyProfile(request);
+    }
 
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasAuthority('MANAGE_USER')  ")
+    @PreAuthorize("isAuthenticated()")
     public void deleteUser(@NotBlank @PathVariable String id) {
          userService.deleteUserById(id);
     }

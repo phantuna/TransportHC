@@ -29,44 +29,45 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     @PostMapping("/created")
+    @PreAuthorize("isAuthenticated()")
     public InventoryResponse created (@Valid  @RequestBody InventoryRequest dto)
     {
         return inventoryService.inventoryCreated(dto);
     }
 
     @PutMapping("/updated/{id}")
-    @PreAuthorize("hasAuthority('MANAGE_INVENTORY')")
+    @PreAuthorize("isAuthenticated()")
     public InventoryResponse updated (@Valid @PathVariable String id , @RequestBody InventoryRequest dto){
         return inventoryService.inventoryUpdated(id, dto);
     }
 
     @GetMapping("/getbyId/{id}")
-    @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
+    @PreAuthorize("isAuthenticated()")
     public InventoryResponse getById(@Valid @PathVariable String id){
         return inventoryService.getInventoryById(id);
     }
 
     @GetMapping("/getAll")
-    @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
+    @PreAuthorize("isAuthenticated()")
     public Page<InventoryResponse> getAll(int page , int size){
         return inventoryService.getAllInventories(page ,size);
     }
 
     @DeleteMapping("/deleted/{id}")
-    @PreAuthorize("hasAuthority('MANAGE_INVENTORY')")
+    @PreAuthorize("isAuthenticated()")
     public void deleted (@Valid @PathVariable String id){
         inventoryService.deleteInventory(id);
     }
 
     @PostMapping("/import")
-    @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
+    @PreAuthorize("isAuthenticated()")
     public void importInventory(@Valid @RequestParam MultipartFile file)
     throws IOException {
         inventoryService.importFromExcel(file);
     }
 
     @GetMapping("/export")
-    @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> exportInventory() throws IOException {
         ByteArrayInputStream in = inventoryService.exportToExcel();
 
@@ -76,7 +77,7 @@ public class InventoryController {
                 .body(in.readAllBytes());
     }
     @GetMapping("/summary")
-    @PreAuthorize("hasAuthority('VIEW_INVENTORY') OR hasAuthority('MANAGE_INVENTORY')")
+    @PreAuthorize("isAuthenticated()")
     public List<InventorySummaryResponse> getInventorySummary() {
         return inventoryService.getInventorySummary();
     }

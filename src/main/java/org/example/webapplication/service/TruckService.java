@@ -93,21 +93,17 @@ public class TruckService {
         if (hasTravelToday) {
             throw new AppException(ErrorCode.TRUCK_HAS_TRAVEL_TODAY);
         }
-
         Truck truck = truckRepository.findById(truckId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRUCK_NOT_FOUND));
-
         if (!truck.getLicensePlate().equals(dto.getLicensePlate())
                 && truckRepository.existsByLicensePlate(dto.getLicensePlate())) {
             throw new AppException(ErrorCode.LICENCE_PLATE_EXISTED);
         }
 
         if (dto.getDriverId() != null) {
-
             User driver = userRepository.findById(dto.getDriverId())
                     .orElseThrow(() -> new AppException(ErrorCode.DRIVER_NOT_FOUND));
             truck.setDriver(driver);
-
         } else {
             truck.setDriver(null);
         }
@@ -116,7 +112,6 @@ public class TruckService {
         truck.setLicensePlate(dto.getLicensePlate());
         truck.setGanMooc(dto.isGanMooc());
         truck.setStatus(dto.getStatus());
-
         Truck saved = truckRepository.save(truck);
         User driver = saved.getDriver();
 

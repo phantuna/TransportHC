@@ -49,24 +49,17 @@ public class ReportService {
 
 
 
-    private PayrollDetailResponse buildPayrollDetail(
-            User driver,
-            int month,
-            int year
+    private PayrollDetailResponse buildPayrollDetail(User driver, int month, int year
     ) {
         LocalDate from = LocalDate.of(year, month, 1);
         LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
-
         double expenseSalary = Optional.ofNullable(
                 payrollRepository.sumApproedExpenseByDriverAndMonth(driver, from, to)
         ).orElse(0.0);
-
         double advance = payrollRepository.findByUser(driver)
                 .map(Payroll::getAdvanceSalary)
                 .orElse(0.0);
-
         double total = driver.getBaseSalary() + expenseSalary - advance;
-
         return PayrollDetailResponse.builder()
                 .driverId(driver.getId())
                 .name(driver.getUsername())
@@ -95,11 +88,7 @@ public class ReportService {
     }
 
     @Transactional
-    public Page<PayrollDetailResponse> payrollAllByMonth(
-            int month,
-            int year,
-            int page,
-            int size
+    public Page<PayrollDetailResponse> payrollAllByMonth(int month, int year, int page, int size
     ) {
         permissionService.getUser(
                 List.of(PermissionKey.MANAGE),
@@ -108,16 +97,12 @@ public class ReportService {
         Pageable pageable = PageRequest.of(page, size);
         List<PayrollDetailResponse> data =
                 payrollRepository.payrollByMonth(month, year, pageable);
-
         long total = userRepository.countByRoles_Id("R_DRIVER");
-
         return new PageImpl<>(data, pageable, total);
     }
 
 
-    public Page<ExpenseSummaryResponse> allTruckExpenseSummaryReport(
-            int page,
-            int size
+    public Page<ExpenseSummaryResponse> allTruckExpenseSummaryReport(int page, int size
     ) {
         permissionService.getUser(
                 List.of(PermissionKey.VIEW),
@@ -128,12 +113,7 @@ public class ReportService {
     }
 
 
-    public Page<ExpenseReportDetailResponse> truckExpenseDetail(
-            String truckId,
-            LocalDate from,
-            LocalDate to,
-            int page,
-            int size
+    public Page<ExpenseReportDetailResponse> truckExpenseDetail(String truckId, LocalDate from, LocalDate to, int page, int size
     ) {
         permissionService.getUser(
                 List.of(PermissionKey.VIEW),

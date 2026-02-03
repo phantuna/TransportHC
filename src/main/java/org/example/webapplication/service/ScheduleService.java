@@ -52,12 +52,10 @@ public class ScheduleService {
 
 
     public ScheduleResponse toResponse(Schedule schedule) {
-
         String driverName = null;
         if (schedule.getDrivers() != null && !schedule.getDrivers().isEmpty()) {
             driverName = schedule.getDrivers().iterator().next().getUsername();
         }
-
         List<ScheduleDocumentResponse> documents = new ArrayList<>();
         if (schedule.getDocuments() != null) {
             for (ScheduleDocument doc : schedule.getDocuments()) {
@@ -98,7 +96,6 @@ public class ScheduleService {
         if (scheduleRepository.existsByStartPlaceIgnoreCaseAndEndPlaceIgnoreCase(start, end)) {
             throw new AppException(ErrorCode.SCHEDULE_ROUTE_EXISTED);
         }
-
         if (dto.getExpense() < 0) {
             throw new AppException(ErrorCode.INVALID_EXPENSE);
         }
@@ -177,7 +174,6 @@ public class ScheduleService {
         );
         Schedule schedule = scheduleRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
-
         ApprovalStatus current = schedule.getApproval() == null ? ApprovalStatus.PENDING_APPROVAL : schedule.getApproval();
         boolean allowed;
         if (current == target) {
@@ -195,10 +191,8 @@ public class ScheduleService {
         if (!allowed) {
             throw new AppException(ErrorCode.INVALID_APPROVAL_TRANSITION);
         }
-
         schedule.setApproval(target);
         Schedule saved = scheduleRepository.save(schedule);
-
         return toResponse(saved);
     }
 

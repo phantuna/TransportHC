@@ -20,19 +20,18 @@ public class ExpenseController {
     private final ExpenseService expenseService;
 
     @PostMapping("/created")
-    @PreAuthorize("hasAuthority('CREATE_EXPENSE')")
-    public ExpenseResponse createdExpense (@Valid  @RequestBody ExpenseRequest request){
+    @PreAuthorize("isAuthenticated()")    public ExpenseResponse createdExpense (@Valid  @RequestBody ExpenseRequest request){
         return expenseService.createdExpense(request);
     }
 
     @PutMapping("/updated/{id}")
-    @PreAuthorize("hasAuthority('UPDATE_EXPENSE')")
+    @PreAuthorize("isAuthenticated()")
     public ExpenseResponse updatedExpense (@Valid @RequestBody ExpenseRequest request,@PathVariable String id){
         return expenseService.updatedExpense(id, request);
     }
 
     @GetMapping("/getAll")
-    @PreAuthorize("hasAuthority('MANAGER_EXPENSE') OR hasAuthority('VIEW_EXPENSE')")
+    @PreAuthorize("isAuthenticated()")
     public Page<ExpenseResponse> getAllExpenses(@RequestParam(defaultValue = "0") int page,
                                                 @RequestParam(defaultValue = "10") int size){
 
@@ -40,18 +39,19 @@ public class ExpenseController {
     }
 
     @PostMapping("/getById/{id}")
-    @PreAuthorize("hasAuthority('VIEW_EXPENSE')")
+    @PreAuthorize("isAuthenticated()")
     public ExpenseResponse getExpenseById( @NotBlank @PathVariable String id){
         return expenseService.getExpenseById(id);
     }
 
     @PostMapping("/approval")
-    @PreAuthorize("hasAuthority('APPROVE_EXPENSE')")
+    @PreAuthorize("isAuthenticated()")
     public ExpenseResponse approvalExpense (@NotBlank @RequestParam String id){
         return expenseService.approvalExpense(id);
     }
 
     @DeleteMapping("/delete/{id}")
+    @PreAuthorize("isAuthenticated()")
     public void deleteExpense(@Valid @PathVariable String id){
         expenseService.deleteExpense(id);
     }

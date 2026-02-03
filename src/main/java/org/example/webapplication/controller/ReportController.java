@@ -27,7 +27,7 @@ public class ReportController {
     private final ReportService reportService;
 
     @GetMapping("/payroll/my")
-    @PreAuthorize("hasAuthority('VIEW_REPORT')")
+    @PreAuthorize("isAuthenticated()")
     public PayrollDetailResponse myPayrollByMonth(
             @RequestParam int month,
             @RequestParam int year
@@ -37,7 +37,7 @@ public class ReportController {
 
     // Manager / Accountant xem lương TẤT CẢ driver theo tháng
     @GetMapping("/payroll/all")
-    @PreAuthorize("hasAuthority('MANAGE_REPORT')")
+    @PreAuthorize("isAuthenticated()")
     public Page<PayrollDetailResponse> payrollAllByMonth(
             @RequestParam int month,
             @RequestParam int year,
@@ -48,6 +48,7 @@ public class ReportController {
     }
 
     @GetMapping("/allTruckExpense")
+    @PreAuthorize("isAuthenticated()")
     public Page<ExpenseSummaryResponse> allTruckExpenseSummaryReport(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size){
@@ -55,7 +56,7 @@ public class ReportController {
     }
 
     @GetMapping("/truckExpenseDetail/{truckId}")
-    @PreAuthorize("hasAuthority('VIEW_REPORT')")
+    @PreAuthorize("isAuthenticated()")
     public Page<ExpenseReportDetailResponse> detail(
             @PathVariable String truckId,
             @RequestParam(required = false)
@@ -70,7 +71,7 @@ public class ReportController {
 
 
     @GetMapping("/scheduleReport/{truckId}")
-    @PreAuthorize("hasAuthority('VIEW_REPORT')")
+    @PreAuthorize("isAuthenticated()")
     public ScheduleReportResponse ScheduleReport(
             @NotBlank @PathVariable String truckId){
         return reportService.scheduleReport(truckId);

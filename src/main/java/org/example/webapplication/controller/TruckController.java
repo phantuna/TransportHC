@@ -21,19 +21,19 @@ public class TruckController {
     private final TruckService truckService;
 
     @PostMapping("/created")
-    @PreAuthorize("hasAuthority('MANAGE_TRUCK')")
+    @PreAuthorize("isAuthenticated()")
     public TruckResponse CreatedTruck(@RequestBody @Valid TruckRequest request ){
         return truckService.createdTruck(request);
     }
 
     @PutMapping("/updated/{nameDriver}")
-    @PreAuthorize("hasAuthority('MANAGE_TRUCK')")
+    @PreAuthorize("isAuthenticated()")
     public TruckResponse UpdatedTruck(@RequestBody @Valid TruckRequest request , @PathVariable("nameDriver") String name_driver){
         return truckService.updatedTruck(request,name_driver);
     }
 
     @GetMapping("/getAll")
-    @PreAuthorize("hasAuthority('MANAGE_TRUCK')")
+    @PreAuthorize("isAuthenticated()")
     public Page<TruckResponse> getALlTruck(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
@@ -42,6 +42,7 @@ public class TruckController {
     }
 
     @DeleteMapping("/delete/{id}")
+    @PreAuthorize("isAuthenticated()")
     public void deleteTruckById(@Valid @PathVariable String id){
         truckService.deleteTruck(id);
     }
