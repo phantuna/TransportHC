@@ -50,16 +50,11 @@ public class UserService {
 
     @Transactional
     public UserResponse createdUser(UserRequest dto,String roleId) {
-        switch (roleId) {
-            case "R_ACCOUNTANT" -> permissionService.getUser(
+        if (!"R_DRIVER".equals(roleId)) {
+            permissionService.getUser(
                     List.of(PermissionKey.MANAGE),
                     PermissionType.USER
             );
-            case  "R_DRIVER","R_MANAGER" -> permissionService.getUser(
-                    List.of(PermissionKey.CREATE),
-                    PermissionType.USER
-            );
-            default -> throw new AppException(ErrorCode.FORBIDDEN);
         }
         if (userRepository.existsByUsername(dto.getUsername())) {
             throw new AppException(ErrorCode.USER_EXISTED);

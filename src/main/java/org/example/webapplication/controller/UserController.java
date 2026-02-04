@@ -3,6 +3,7 @@ package org.example.webapplication.controller;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.webapplication.dto.request.user.UpdateUserRequest;
 import org.example.webapplication.dto.request.user.UserRequest;
 import org.example.webapplication.dto.response.user.UserResponse;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/user")
