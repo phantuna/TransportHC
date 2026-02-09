@@ -9,7 +9,9 @@ import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.example.webapplication.dto.response.payroll.PayrollDeductionItem;
 import org.example.webapplication.dto.response.payroll.PayrollDetailResponse;
+import org.example.webapplication.dto.response.payroll.PayrollTripItem;
 import org.example.webapplication.entity.*;
 import org.example.webapplication.enums.ApprovalStatus;
 import org.springframework.data.domain.Pageable;
@@ -50,41 +52,24 @@ public class PayrollRepositoryCustomImpl implements PayrollRepositoryCustom {
 
 
     @Override
-    public List<PayrollDetailResponse> payrollByMonth(
+    public List<Payroll> payrollByMonth(
             int month,
             int year,
             Pageable pageable
     ) {
-        LocalDate from = LocalDate.of(year, month, 1);
-        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
-
-        Expression<Double> expenseSum = approvedExpenseSumExpr(qUser, from, to);
-        NumberExpression<Double> totalSalary = Expressions.numberTemplate(
-                        Double.class,
-                        "{0} + {1} - {2}",
-                        qUser.baseSalary,
-                        expenseSum,
-                        qPayroll.advanceSalary.coalesce(0.0)
-                );
         return queryFactory
-                .select(Projections.constructor(
-                        PayrollDetailResponse.class,
-                        qUser.id,
-                        qUser.username,
-                        Expressions.constant(month),
-                        Expressions.constant(year),
-                        qUser.baseSalary,
-                        expenseSum,
-                        qPayroll.advanceSalary.coalesce(0.0),
-                        totalSalary
-                ))
-                .from(qUser)
-                .leftJoin(qPayroll).on(qPayroll.user.eq(qUser))
-                .where(qUser.roles.any().id.eq("R_DRIVER"))
+                .selectFrom(qPayroll)
+                .join(qPayroll.user, qUser).fetchJoin()
+                .where(
+                        qPayroll.month.eq(month),
+                        qPayroll.year.eq(year),
+                        qUser.roles.any().id.eq("R_DRIVER")
+                )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
     }
+
 
     @Override
     public Double sumApproedExpenseByDriverAndMonth(
@@ -103,4 +88,38 @@ public class PayrollRepositoryCustomImpl implements PayrollRepositoryCustom {
                 )
                 .fetchOne();
     }
+
+    @Override
+    public List<PayrollTripItem> tripSalaryByDriverAndMonth(
+            String driverId,
+            LocalDate from,
+            LocalDate to
+    ) {
+        return queryFactory
+                .select(Projections.constructor(
+                        PayrollTripItem.class,
+                        Expressions.constant(0),
+                        qTravel.schedule.startPlace
+                                .concat(" - ")
+                                .concat(qTravel.schedule.endPlace),
+                        qTravel.id.count().intValue(),
+                        qTravel.schedule.expense,
+                        qTravel.schedule.expense.multiply(qTravel.id.count())
+                ))
+                .from(qTravel)
+                .join(qTravel.schedule)
+                .where(
+                        qTravel.user.id.eq(driverId),
+                        qTravel.startDate.between(from, to)
+                )
+                .groupBy(
+                        qTravel.schedule.id,
+                        qTravel.schedule.startPlace,
+                        qTravel.schedule.endPlace,
+                        qTravel.schedule.expense
+                )
+                .fetch();
+    }
+
+
 }

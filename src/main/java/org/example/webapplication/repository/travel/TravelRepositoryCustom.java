@@ -1,5 +1,6 @@
 package org.example.webapplication.repository.travel;
 
+import org.example.webapplication.dto.response.travel.TravelDailyReportItemResponse;
 import org.example.webapplication.dto.response.travel.TravelResponse;
 import org.example.webapplication.dto.response.travel.TravelScheduleReportResponse;
 import org.example.webapplication.entity.Travel;
@@ -22,5 +23,11 @@ public interface TravelRepositoryCustom {
     );
     boolean existsActiveTravelToday(String truckId);
     Page<TravelScheduleReportResponse> findTravelPage(Pageable pageable);
+    Travel findCurrentBySchedule(String scheduleId, LocalDate today);
+    List<TravelDailyReportItemResponse> dailyTravelReport(
+            String truckId,
+            Integer month,
+            Integer year
+    );
 
 }

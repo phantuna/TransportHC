@@ -1,6 +1,5 @@
 package org.example.webapplication.service;
 
-
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.webapplication.enums.ApprovalStatus;
@@ -15,10 +14,12 @@ import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.expense.ExpenseRepository;
 import org.example.webapplication.repository.travel.TravelRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -32,9 +33,9 @@ public class ExpenseService {
     public final TravelRepository travelRepository;
     public final PermissionService  permissionService;
 
+    // Helper method để map response (không cần cache)
     private ExpenseResponse toResponse(Expense expense, String username) {
         Truck truck = expense.getTravel().getTruck();
-
         return ExpenseResponse.builder()
                 .id(expense.getId())
                 .type(expense.getType())
@@ -49,6 +50,14 @@ public class ExpenseService {
                 .build();
     }
 
+    // 1. TẠO MỚI: Gắn trực tiếp bộ Evict vào đây
+    @Caching(evict = {
+            @CacheEvict(value = "expenses_list", allEntries = true),          // Xóa cache danh sách chi phí
+            @CacheEvict(value = "report_truck_summary", allEntries = true),   // Xóa báo cáo tổng hợp
+            @CacheEvict(value = "report_truck_detail", allEntries = true),    // Xóa báo cáo chi tiết
+            @CacheEvict(value = "report_schedule", allEntries = true),        // Xóa báo cáo lịch trình
+            @CacheEvict(value = "report_driver_expense", allEntries = true)   // Xóa báo cáo tài xế
+    })
     @Transactional
     public ExpenseResponse createdExpense(ExpenseRequest dto){
         permissionService.getUser(
@@ -70,10 +79,18 @@ public class ExpenseService {
         expense.setIncurredDate(dto.getIncurredDate());
         Expense saved = expenseRepository.save(expense);
 
+        // Không gọi hàm evictExpenseRelatedCaches() nữa vì đã gắn annotation ở trên rồi
         return toResponse(saved, username);
     }
 
-    //manager- supervisor
+    // 2. DUYỆT: Gắn trực tiếp bộ Evict vào đây
+    @Caching(evict = {
+            @CacheEvict(value = "expenses_list", allEntries = true),
+            @CacheEvict(value = "report_truck_summary", allEntries = true),
+            @CacheEvict(value = "report_truck_detail", allEntries = true),
+            @CacheEvict(value = "report_schedule", allEntries = true),
+            @CacheEvict(value = "report_driver_expense", allEntries = true)
+    })
     @Transactional
     public ExpenseResponse approvalExpense (String id){
         permissionService.getUser(
@@ -83,14 +100,23 @@ public class ExpenseService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         Expense expense = expenseRepository.findById(id)
-                        .orElseThrow(() -> new AppException(ErrorCode.EXPENSE_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.EXPENSE_NOT_FOUND));
         Truck truck = expense.getTravel().getTruck();
         expense.setApproval(ApprovalStatus.APPROVED);
         expense.setModifiedBy(username);
         Expense saved = expenseRepository.save(expense);
+
         return toResponse(saved, username);
     }
 
+    // 3. CẬP NHẬT: Gắn trực tiếp bộ Evict vào đây
+    @Caching(evict = {
+            @CacheEvict(value = "expenses_list", allEntries = true),
+            @CacheEvict(value = "report_truck_summary", allEntries = true),
+            @CacheEvict(value = "report_truck_detail", allEntries = true),
+            @CacheEvict(value = "report_schedule", allEntries = true),
+            @CacheEvict(value = "report_driver_expense", allEntries = true)
+    })
     @Transactional
     public ExpenseResponse updatedExpense(String id , ExpenseRequest dto){
         permissionService.getUser(
@@ -115,6 +141,8 @@ public class ExpenseService {
         return toResponse(saved, username);
     }
 
+    // 4. LẤY DANH SÁCH: Sửa tên cache thành "expenses_list" cho khớp với bên trên
+    @Cacheable(value = "expenses_list", key = "{#page, #size}")
     public Page<ExpenseResponse> getAllExpenses(int page, int size){
         permissionService.getUser(
                 List.of(PermissionKey.MANAGE),
@@ -138,6 +166,14 @@ public class ExpenseService {
         return toResponse(expense, modifyBy);
     }
 
+    // 5. XÓA: Gắn trực tiếp bộ Evict vào đây
+    @Caching(evict = {
+            @CacheEvict(value = "expenses_list", allEntries = true),
+            @CacheEvict(value = "report_truck_summary", allEntries = true),
+            @CacheEvict(value = "report_truck_detail", allEntries = true),
+            @CacheEvict(value = "report_schedule", allEntries = true),
+            @CacheEvict(value = "report_driver_expense", allEntries = true)
+    })
     @Transactional
     public void deleteExpense(String expenseId) {
         permissionService.getUser(

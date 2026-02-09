@@ -14,19 +14,19 @@ import org.example.webapplication.enums.InventoryStatus;
 @NoArgsConstructor
 @Builder
 public class InventoryRequest {
-    @NotBlank(message = "ITEM_ID_NOT_NULL")
+    @NotBlank(message = "validation.item_id.not_null")
     private String itemId;
 
-    @Positive(message = "QUANTITY_GREATER_THAN_ZERO")
+    @Positive(message = "validation.quantity.gt_zero")
     private double quantity;
 
-    @Size(max = 300, message = "DESCRIPTION_NOT_EXCEED_300")
+    @Size(max = 300, message = "validation.description.exceed_300")
     private String description;
 
-    @NotBlank(message = "INVOICE_ID_NOT_NULL")
+    @NotBlank(message = "validation.invoice_id.not_null")
     private String invoiceId;
 
-    @NotBlank(message = "CUSTOMER_NAME_NOT_NULL")
+    @NotBlank(message = "validation.customer_name.not_null")
     private String customerName;
 
     private InventoryStatus status;

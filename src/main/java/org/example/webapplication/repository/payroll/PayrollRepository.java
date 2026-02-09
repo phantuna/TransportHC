@@ -8,6 +8,12 @@ import java.util.Optional;
 
 public interface PayrollRepository extends JpaRepository<Payroll,String>, PayrollRepositoryCustom {
     Optional<Payroll> findByUser(User user);
+    Optional<Payroll> findByUser_IdAndMonthAndYear(
+            String userId,
+            int month,
+            int year
+    );
 
+    long countByMonthAndYear(int month, int year);
 
 }

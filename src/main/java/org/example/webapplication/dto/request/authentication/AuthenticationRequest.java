@@ -6,11 +6,11 @@ import lombok.Data;
 
 @Data
 public class AuthenticationRequest {
-    @NotBlank(message = "USERNAME_NOT_NULL")
-    @Size (min = 3,message ="USERNAME_NOT_VALID")
+    @NotBlank(message = "validation.username.not_null")
+    @Size (min = 3,message ="validation.username.invalid")
     private String username;
 
-    @NotBlank(message = "PASSWORD_NOT_NULL")
-    @Size(min = 5, message = "PASSWORD_NOT_VALID")
+    @NotBlank(message = "validation.password.not_null")
+    @Size(min = 5, message = "validation.password.invalid")
     private String password;
 }

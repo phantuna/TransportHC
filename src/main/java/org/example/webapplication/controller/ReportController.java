@@ -4,12 +4,15 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.example.webapplication.dto.request.truck.TruckExpenseRequest;
+import org.example.webapplication.dto.response.expense.DriverExpenseReportResponse;
 import org.example.webapplication.dto.response.expense.ExpenseResponse;
 import org.example.webapplication.dto.response.report.ExpenseReportDetailResponse;
 import org.example.webapplication.dto.response.report.ExpenseReportResponse;
 import org.example.webapplication.dto.response.payroll.PayrollDetailResponse;
 import org.example.webapplication.dto.response.report.ExpenseSummaryResponse;
 import org.example.webapplication.dto.response.schedule.ScheduleReportResponse;
+import org.example.webapplication.dto.response.travel.TravelDailyReportResponse;
+import org.example.webapplication.service.PayrollService;
 import org.example.webapplication.service.ReportService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +28,7 @@ import java.util.List;
 @RequestMapping("/report")
 public class ReportController {
     private final ReportService reportService;
+    private final PayrollService  payrollService;
 
     @GetMapping("/payroll/my")
     @PreAuthorize("isAuthenticated()")
@@ -32,7 +36,7 @@ public class ReportController {
             @RequestParam int month,
             @RequestParam int year
     ) {
-        return reportService.myPayrollByMonth(month, year);
+        return payrollService.myPayrollByMonth(month, year);
     }
 
     // Manager / Accountant xem lương TẤT CẢ driver theo tháng
@@ -44,7 +48,19 @@ public class ReportController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        return reportService.payrollAllByMonth(month, year,page,size);
+        return payrollService.payrollAllByMonth(month, year,page,size);
+    }
+    @PutMapping("/payroll/{driverId}")
+    @PreAuthorize("isAuthenticated()")
+    public PayrollDetailResponse  updateBaseSalary(
+            @PathVariable String driverId,
+            @RequestParam int month,
+            @RequestParam int year,
+            @RequestParam double amount
+    ) {
+        return payrollService.updateBaseSalaryForMonth(
+                driverId, month, year, amount
+        );
     }
 
     @GetMapping("/allTruckExpense")
@@ -76,4 +92,24 @@ public class ReportController {
             @NotBlank @PathVariable String truckId){
         return reportService.scheduleReport(truckId);
     }
+
+    @GetMapping("/driver-expense")
+    @PreAuthorize("isAuthenticated()")
+    public DriverExpenseReportResponse driverExpenseReport(
+            @RequestParam String driverId,
+            @RequestParam int month,
+            @RequestParam int year
+    ) {
+        return reportService.driverExpenseReport(driverId, month, year);
+    }
+    @GetMapping("/travel-daily")
+    @PreAuthorize("isAuthenticated()")
+    public TravelDailyReportResponse travelDailyReport(
+            @RequestParam(required = false) String truckId,
+            @RequestParam int month,
+            @RequestParam int year
+    ) {
+        return reportService.travelDailyReport(truckId, month, year);
+    }
+
 }

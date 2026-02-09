@@ -16,20 +16,20 @@ import org.example.webapplication.enums.TruckStatus;
 @Builder
 public class TruckRequest {
     private String driverId;
-    @NotBlank(message = "TYPE_TRUCK_REQUIRED")
+    @NotBlank(message = "validation.truck_type.required")
     private String typeTruck;
 
-    @NotBlank(message = "LICENSE_PLATE_REQUIRED")
+    @NotBlank(message = "validation.license_plate.required")
     @Pattern(
             regexp = "^[0-9A-Z\\-\\.]+$",
-            message = "LICENSE_PLATE_INVALID"
+            message = "validation.license_plate.invalid"
     )
     private String licensePlate;
 
-    @NotNull(message = "GANMOOC_REQUIRED")
+    @NotNull(message = "validation.ganmooc.required")
     private boolean ganMooc;
 
-    @NotNull(message = "TRUCK_STATUS_REQUIRED")
+    @NotNull(message = "validation.truck_status.required")
     private TruckStatus status;
 
 }

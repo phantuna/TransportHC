@@ -13,6 +13,8 @@ import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.RoleRepository;
 import org.example.webapplication.repository.user.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -47,7 +49,7 @@ public class UserService {
                 .baseSalary(user.getBaseSalary())
                 .build();
     }
-
+    @CacheEvict(value = "users_list", allEntries = true)
     @Transactional
     public UserResponse createdUser(UserRequest dto,String roleId) {
         if (!"R_DRIVER".equals(roleId)) {
@@ -81,6 +83,7 @@ public class UserService {
         return toResponse(currentUser);
     }
 
+    @Cacheable(value = "users_list", key = "{#page, #size}")
     public Page<UserResponse> getAllUsers(int page , int size){
         Pageable pageable = PageRequest.of(page, size);
         Page<User> usersPage = userRepository.findAllByRole_Id("R_DRIVER",pageable);
@@ -92,6 +95,7 @@ public class UserService {
         return usersPage.map(this::toResponse);
     }
 
+    @CacheEvict(value = "users_list", allEntries = true)
     @Transactional
     public UserResponse updateMyProfile(UpdateUserRequest dto) {
 
@@ -117,7 +121,7 @@ public class UserService {
     }
 
 
-
+    @CacheEvict(value = "users_list", allEntries = true)
     @Transactional
     public void deleteUserById(String id) {
         permissionService.getUser(

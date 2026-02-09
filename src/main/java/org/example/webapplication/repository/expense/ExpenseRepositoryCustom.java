@@ -1,5 +1,6 @@
 package org.example.webapplication.repository.expense;
 
+import com.querydsl.core.Tuple;
 import org.example.webapplication.dto.response.expense.ExpenseResponse;
 import org.example.webapplication.entity.Expense;
 import org.example.webapplication.enums.TypeExpense;
@@ -24,5 +25,10 @@ public interface ExpenseRepositoryCustom {
             LocalDate toDate
     );
 
+    List<Tuple> sumExpenseByDriverAndMonth(
+            String driverId,
+            LocalDate from,
+            LocalDate to
+    );
 
 }

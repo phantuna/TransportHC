@@ -14,20 +14,20 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TravelRequest {
-    @NotBlank(message = "TRUCK_ID_NOT_NULL")
+    @NotBlank(message = "validation.truck_id.not_null")
     private String truckId;
 
-    @NotBlank(message = "SCHEDULE_ID_NOT_NULL")
+    @NotBlank(message = "validation.schedule_id.not_null")
     private String scheduleId;
 
 
-    @NotNull(message = "DATE_NOT_NULL")
-    @FutureOrPresent(message = "DATE_MUST_BE_TODAY_OR_FUTURE")
+    @NotNull(message = "validation.date.not_null")
+    @FutureOrPresent(message = "validation.date.today_or_future")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate startDate;
 
-    @NotNull(message = "DATE_NOT_NULL")
-    @FutureOrPresent(message = "DATE_MUST_BE_TODAY_OR_FUTURE")
+    @NotNull(message = "validation.date.not_null")
+    @FutureOrPresent(message = "validation.date.today_or_future")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate;
 }

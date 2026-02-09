@@ -1,9 +1,9 @@
 package org.example.webapplication.service;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.webapplication.entity.Travel;
 import org.example.webapplication.enums.ApprovalStatus;
 import org.example.webapplication.dto.request.schedule.ScheduleRequest;
 import org.example.webapplication.dto.response.schedule.ScheduleDocumentResponse;
@@ -17,12 +17,15 @@ import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.schedule.ScheduleDocumentRepository;
 import org.example.webapplication.repository.schedule.ScheduleRepository;
+import org.example.webapplication.repository.travel.TravelRepository;
 import org.example.webapplication.repository.user.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -32,6 +35,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,16 +50,22 @@ public class ScheduleService {
     private final ScheduleRepository scheduleRepository;
     private final ScheduleDocumentRepository scheduleDocumentRepository;
     private final PermissionService permissionService;
+    private final TravelRepository  travelRepository;
 
     @Value("${file.upload-dir}")
     private String uploadPath ;
 
-
+    // Helper map response
     public ScheduleResponse toResponse(Schedule schedule) {
-        String driverName = null;
-        if (schedule.getDrivers() != null && !schedule.getDrivers().isEmpty()) {
-            driverName = schedule.getDrivers().iterator().next().getUsername();
+        String driverName = "Chưa phân công";
+
+        Travel travel = travelRepository
+                .findCurrentBySchedule(schedule.getId(), LocalDate.now());
+
+        if (travel != null && travel.getUser() != null) {
+            driverName = travel.getUser().getUsername();
         }
+
         List<ScheduleDocumentResponse> documents = new ArrayList<>();
         if (schedule.getDocuments() != null) {
             for (ScheduleDocument doc : schedule.getDocuments()) {
@@ -82,6 +92,12 @@ public class ScheduleService {
                 .build();
     }
 
+    // 1. TẠO MỚI: Gắn trực tiếp @Caching lên đây
+    @Caching(evict = {
+            @CacheEvict(value = "schedules_list", allEntries = true),
+            @CacheEvict(value = "schedules_user", allEntries = true),
+            @CacheEvict(value = "report_schedule", allEntries = true)
+    })
     @Transactional
     public ScheduleResponse createdSchedule (ScheduleRequest dto){
         permissionService.getUser(
@@ -117,6 +133,8 @@ public class ScheduleService {
         return toResponse(saved);
     }
 
+    // 2. LẤY DANH SÁCH CHUNG
+    @Cacheable(value = "schedules_list", key = "{#page, #size}")
     public Page<ScheduleResponse> getAllSchedules(int page, int size) {
         permissionService.getUser(
                 List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
@@ -128,7 +146,8 @@ public class ScheduleService {
         return schedulePage.map(this::toResponse);
     }
 
-
+    // 3. LẤY DANH SÁCH THEO USER: Sửa lại SpEL Key cho chuẩn
+    @Cacheable(value = "schedules_user", key = "{T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName(), #page, #size}")
     public Page<ScheduleResponse> getScheduleByUsername(int page, int size){
         permissionService.getUser(
                 List.of(PermissionKey.VIEW),
@@ -166,6 +185,13 @@ public class ScheduleService {
 
     }
 
+
+    // 4. DUYỆT: Gắn trực tiếp @Caching
+    @Caching(evict = {
+            @CacheEvict(value = "schedules_list", allEntries = true),
+            @CacheEvict(value = "schedules_user", allEntries = true),
+            @CacheEvict(value = "report_schedule", allEntries = true)
+    })
     @Transactional
     public ScheduleResponse approvalSchedule(String id, ApprovalStatus target) {
         permissionService.getUser(
@@ -193,9 +219,16 @@ public class ScheduleService {
         }
         schedule.setApproval(target);
         Schedule saved = scheduleRepository.save(schedule);
+
         return toResponse(saved);
     }
 
+    // 5. CẬP NHẬT: Gắn trực tiếp @Caching
+    @Caching(evict = {
+            @CacheEvict(value = "schedules_list", allEntries = true),
+            @CacheEvict(value = "schedules_user", allEntries = true),
+            @CacheEvict(value = "report_schedule", allEntries = true)
+    })
     @Transactional
     public ScheduleResponse updateSchedule(String scheduleId, ScheduleRequest dto){
         permissionService.getUser(
@@ -211,9 +244,16 @@ public class ScheduleService {
 
         Schedule saved = scheduleRepository.save(schedule);
         ScheduleResponse response =toResponse(saved);
+
         return response;
     }
 
+    // 6. UPLOAD: Gắn trực tiếp @Caching
+    @Caching(evict = {
+            @CacheEvict(value = "schedules_list", allEntries = true),
+            @CacheEvict(value = "schedules_user", allEntries = true),
+            @CacheEvict(value = "report_schedule", allEntries = true)
+    })
     @Transactional
     public ScheduleDocumentResponse uploadDocument(String scheduleId, MultipartFile file) throws IOException {
         permissionService.getUser(
@@ -260,6 +300,12 @@ public class ScheduleService {
 
     }
 
+    // 7. XÓA: Gắn trực tiếp @Caching
+    @Caching(evict = {
+            @CacheEvict(value = "schedules_list", allEntries = true),
+            @CacheEvict(value = "schedules_user", allEntries = true),
+            @CacheEvict(value = "report_schedule", allEntries = true)
+    })
     @Transactional
     public void deleteSchedule(String scheduleId) {
         permissionService.getUser(

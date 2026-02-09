@@ -16,13 +16,13 @@ public class TruckExpenseRequest {
 
     private String truckId;
 
-    @NotNull(message = "DATE_NOT_NULL")
-    @PastOrPresent(message = "DATE_NOT_IN_FUTURE")
+    @NotNull(message = "validation.date.not_null")
+    @PastOrPresent(message = "validation.date.not_in_future")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate fromDate;
 
-    @NotNull(message = "DATE_NOT_NULL")
-    @PastOrPresent(message = "DATE_NOT_IN_FUTURE")
+    @NotNull(message = "validation.date.not_null")
+    @PastOrPresent(message = "validation.date.not_in_future")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate toDate;
 }

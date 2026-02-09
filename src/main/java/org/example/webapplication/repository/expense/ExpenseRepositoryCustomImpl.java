@@ -1,6 +1,7 @@
 package org.example.webapplication.repository.expense;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -100,4 +101,29 @@ public class ExpenseRepositoryCustomImpl implements ExpenseRepositoryCustom {
         return new PageImpl<>(response, pageable, total);
 
     }
+    @Override
+    public List<Tuple> sumExpenseByDriverAndMonth(
+            String driverId,
+            LocalDate from,
+            LocalDate to
+    ) {
+        QExpense expense = QExpense.expense1;
+        QTravel travel = QTravel.travel;
+
+        return queryFactory
+                .select(
+                        expense.type,
+                        expense.expense.sum()
+                )
+                .from(expense)
+                .join(expense.travel, travel)
+                .where(
+                        travel.user.id.eq(driverId),
+                        expense.approval.eq(ApprovalStatus.APPROVED),
+                        expense.incurredDate.between(from, to)
+                )
+                .groupBy(expense.type)
+                .fetch();
+    }
+
 }

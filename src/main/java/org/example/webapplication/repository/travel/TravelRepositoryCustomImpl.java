@@ -2,13 +2,13 @@ package org.example.webapplication.repository.travel;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
-import org.example.webapplication.dto.response.schedule.ScheduleDailyTotalResponse;
-import org.example.webapplication.dto.response.travel.TravelResponse;
+import org.example.webapplication.dto.response.travel.TravelDailyReportItemResponse;
+import org.example.webapplication.dto.response.travel.TravelDailyReportResponse;
 import org.example.webapplication.dto.response.travel.TravelScheduleReportResponse;
 import org.example.webapplication.entity.*;
-import org.example.webapplication.enums.ApprovalStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -53,26 +53,45 @@ public class TravelRepositoryCustomImpl implements TravelRepositoryCustom{
         return builder;
     }
 
-    public List<ScheduleDailyTotalResponse> countTripsPerDay_ByTravelTripCountSum(
-            String truckId, LocalDate from, LocalDate to
+    @Override
+    public List<TravelDailyReportItemResponse> dailyTravelReport(
+            String truckId,
+            Integer month,
+            Integer year
     ) {
+        LocalDate from = LocalDate.of(year, month, 1);
+        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
+
         return queryFactory
                 .select(Projections.constructor(
-                        ScheduleDailyTotalResponse.class,
+                        TravelDailyReportItemResponse.class,
+                        Expressions.constant(0), // STT set sau
+                        qUser.username,
+                        qUser.username,
+                        qTruck.licensePlate,
+                        qTruck.ganMooc,
                         qTravel.startDate,
-                        qTravel.tripCount.coalesce(0L).sum()
-                ))
+                        qSchedule.startPlace,
+                        qSchedule.endPlace,
+                        qTravel.id.count()                ))
                 .from(qTravel)
+                .join(qTravel.user, qUser)
                 .join(qTravel.truck, qTruck)
+                .join(qTravel.schedule, qSchedule)
                 .where(
-                        qTruck.id.eq(truckId),
-                        from != null ? qTravel.startDate.goe(from) : null,
-                        to != null ? qTravel.startDate.loe(to) : null
+                        qTravel.startDate.between(from, to),
+                        truckId != null ? qTruck.id.eq(truckId) : null
                 )
-                .groupBy(qTravel.startDate)
+                .groupBy(
+                        qUser.id,
+                        qTruck.id,
+                        qSchedule.id,
+                        qTravel.startDate
+                )
                 .orderBy(qTravel.startDate.asc())
                 .fetch();
     }
+
 
     @Override
     public List<Travel> findByTruck_IdAndStartDateBetween(String truckId, LocalDate fromDate, LocalDate toDate) {
@@ -162,5 +181,17 @@ public class TravelRepositoryCustomImpl implements TravelRepositoryCustom{
         return new PageImpl<>(data, pageable, total);
     }
 
+    @Override
+    public Travel findCurrentBySchedule(String scheduleId, LocalDate today) {
+        return queryFactory
+                .selectFrom(qTravel)
+                .where(
+                        qTravel.schedule.id.eq(scheduleId),
+                        qTravel.startDate.loe(today),
+                        qTravel.endDate.goe(today)
+                )
+                .orderBy(qTravel.startDate.desc())
+                .fetchFirst();
+    }
 
 }

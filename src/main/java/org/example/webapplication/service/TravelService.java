@@ -19,6 +19,9 @@ import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.schedule.ScheduleRepository;
 import org.example.webapplication.repository.travel.TravelRepository;
 import org.example.webapplication.repository.truck.TruckRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +43,7 @@ public class TravelService {
     private final ScheduleRepository scheduleRepository;
     private final PermissionService  permissionService;
     private final QuartzService quartzTravelService;
+
 
     public TravelResponse toResponse(Travel travel) {
 
@@ -96,7 +100,13 @@ public class TravelService {
                 .totalExpense(totalExpense)
                 .build();
     }
+    @Caching(evict = {
+            @CacheEvict(value = "travels_list", allEntries = true),
+            @CacheEvict(value = "report_travel_daily", allEntries = true), // Xóa báo cáo nhật trình
+            @CacheEvict(value = "report_schedule", allEntries = true) ,     // Xóa báo cáo lịch trình
+            @CacheEvict(value = "travel_detail", allEntries = true)
 
+    })
     @Transactional
     public TravelResponse createdTravel(TravelRequest dto) {
         permissionService.getUser(
@@ -153,10 +163,11 @@ public class TravelService {
                     }
                 }
         );
+
         return toResponse(saved);
     }
 
-
+    @Cacheable(value = "travel_detail", key = "#travelId")
     public TravelResponse getTravelById(String travelId) {
         permissionService.getUser(
                 List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
@@ -168,7 +179,7 @@ public class TravelService {
         return toResponse(travel);
     }
 
-
+    @Cacheable(value = "travels_list", key = "{#page, #size}")
     public Page<TravelScheduleReportResponse> getALlTravels(int page, int size) {
         permissionService.getUser(
                 List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
@@ -179,6 +190,13 @@ public class TravelService {
 
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "travels_list", allEntries = true),
+            @CacheEvict(value = "report_travel_daily", allEntries = true), // Xóa báo cáo nhật trình
+            @CacheEvict(value = "report_schedule", allEntries = true) ,     // Xóa báo cáo lịch trình
+            @CacheEvict(value = "travel_detail", allEntries = true)
+
+    })
     @Transactional
     public TravelResponse updateTravel(String travelId, TravelRequest dto) {
         permissionService.getUser(
@@ -230,6 +248,13 @@ public class TravelService {
         return toResponse(saved);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "travels_list", allEntries = true),
+            @CacheEvict(value = "report_travel_daily", allEntries = true), // Xóa báo cáo nhật trình
+            @CacheEvict(value = "report_schedule", allEntries = true) ,     // Xóa báo cáo lịch trình
+            @CacheEvict(value = "travel_detail", allEntries = true)
+
+    })
     @Transactional
     public void deleteTravel(String travelId) {
         permissionService.getUser(

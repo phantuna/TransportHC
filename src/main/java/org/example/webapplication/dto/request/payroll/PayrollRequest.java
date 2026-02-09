@@ -15,17 +15,17 @@ import java.time.LocalDate;
 @NoArgsConstructor
 
 public class PayrollRequest {
-    @NotBlank(message = "DRIVER_ID_NOT_NULL")
+    @NotBlank(message = "validation.driver_id.not_null")
     private String driverId ;
 
-    @NotNull(message = "DATE_NOT_NULL")
+    @NotNull(message = "validation.date.not_null")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate from;
 
-    @NotNull(message = "DATE_NOT_NULL")
+    @NotNull(message = "validation.date.not_null")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate to;
 
-    @PositiveOrZero(message = "ADVANCE_GREATER_THAN_ZERO")
+    @PositiveOrZero(message = "validation.advance.gt_zero")
     private Double advance;
 }

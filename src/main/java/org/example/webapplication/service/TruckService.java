@@ -13,6 +13,8 @@ import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.travel.TravelRepository;
 import org.example.webapplication.repository.truck.TruckRepository;
 import org.example.webapplication.repository.user.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +44,7 @@ public class TruckService {
                 .build();
     }
 
+    @CacheEvict(value = "trucks_list", allEntries = true)
     @Transactional
     public TruckResponse createdTruck(TruckRequest dto) {
         permissionService.getUser(
@@ -82,6 +85,7 @@ public class TruckService {
 
 
     // manager - supervisor
+    @CacheEvict(value = "trucks_list", allEntries = true)
     @Transactional
     public TruckResponse updatedTruck(TruckRequest dto, String truckId) {
         permissionService.getUser(
@@ -118,7 +122,7 @@ public class TruckService {
         return toResponse(saved,driver);
     }
 
-
+    @Cacheable(value = "trucks_list", key = "{#page, #size}")
     public Page<TruckResponse> getAllTrucks(int page, int size){
         permissionService.getUser(
                 List.of(PermissionKey.MANAGE,PermissionKey.VIEW),
@@ -133,6 +137,7 @@ public class TruckService {
         });
     }
 
+    @CacheEvict(value = "trucks_list", allEntries = true)
     @Transactional
     public void deleteTruck(String truckId) {
         permissionService.getUser(

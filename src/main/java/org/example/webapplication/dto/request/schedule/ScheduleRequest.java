@@ -12,14 +12,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ScheduleRequest {
-    @NotBlank(message = "PLACE_NOT_NULL")
+    @NotBlank(message = "validation.place.not_null")
     private String startPlace;
-    @NotBlank(message = "PLACE_NOT_NULL")
+    @NotBlank(message = "validation.place.not_null")
     private String endPlace;
-    @Positive(message = " EXPENSE_GREATER_THAN_ZERO")
+    @Positive(message = " validation.expense.gt_zero")
     private double expense;
 
-    @Size(max = 300, message = "DESCRIPTION_NOT_EXCEED_300")
+    @Size(max = 300, message = "validation.description.exceed_300")
     private String description;
 
 }

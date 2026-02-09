@@ -15,20 +15,20 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ExpenseRequest {
-    @NotNull (message = "TYPE_EXPENSE_NOT_NULL")
+    @NotNull (message = "validation.expense_type.not_null")
     private TypeExpense type;
 
-    @Positive(message = "EXPENSE_GREATER_THAN_ZERO")
+    @Positive(message = "validation.expense.gt_zero")
     private double expense;
 
-    @Size(max = 300, message = "DESCRIPTION_NOT_EXCEED_300")
+    @Size(max = 300, message = "validation.description.exceed_300")
     private String description;
 
-    @NotBlank(message = "TRAVEL_ID_NOT_NULL")
+    @NotBlank(message = "validation.travel_id.not_null")
     private String travelId;
 
-    @NotNull(message = "DATE_NOT_NULL")
-    @PastOrPresent(message = "DATE_NOT_IN_FUTURE")
+    @NotNull(message = "validation.date.not_null")
+    @PastOrPresent(message = "validation.date.not_in_future")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate incurredDate;
 

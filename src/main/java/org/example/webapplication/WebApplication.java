@@ -2,11 +2,13 @@ package org.example.webapplication;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
 
 @SpringBootApplication
+@EnableCaching
 @EnableJpaAuditing
 @EnableMethodSecurity(prePostEnabled = true)
 public class WebApplication {
