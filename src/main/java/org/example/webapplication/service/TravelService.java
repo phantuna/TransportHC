@@ -2,6 +2,7 @@ package org.example.webapplication.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.webapplication.dto.response.PageResponse;
 import org.example.webapplication.dto.response.travel.TravelScheduleReportResponse;
 import org.example.webapplication.enums.ApprovalStatus;
 import org.example.webapplication.enums.PermissionKey;
@@ -19,6 +20,8 @@ import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.schedule.ScheduleRepository;
 import org.example.webapplication.repository.travel.TravelRepository;
 import org.example.webapplication.repository.truck.TruckRepository;
+import org.example.webapplication.service.cache.TravelCacheService;
+import org.example.webapplication.service.mapper.TravelMapper;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -43,63 +46,9 @@ public class TravelService {
     private final ScheduleRepository scheduleRepository;
     private final PermissionService  permissionService;
     private final QuartzService quartzTravelService;
+    private final TravelMapper  travelMapper;
+    private final TravelCacheService  travelCacheService;
 
-
-    public TravelResponse toResponse(Travel travel) {
-
-        Truck truck = travel.getTruck();
-        Schedule schedule = travel.getSchedule();
-
-        double totalExpense = 0;
-        List<ExpenseResponse> expenseResponses = new ArrayList<>();
-
-        if (travel.getExpenses() != null) {
-            for (Expense expense : travel.getExpenses()) {
-
-                if (expense.getApproval() == ApprovalStatus.APPROVED) {
-                    totalExpense += expense.getExpense();
-                }
-
-                expenseResponses.add(
-                        ExpenseResponse.builder()
-                                .id(expense.getId())
-                                .type(expense.getType())
-                                .expense(expense.getExpense())
-                                .description(expense.getDescription())
-                                .approval(expense.getApproval())
-                                .travelId(travel.getId())
-                                .incurredDate(expense.getIncurredDate())
-                                .driverName(
-                                        travel.getUser() != null
-                                                ? travel.getUser().getUsername()
-                                                : null
-                                )
-                                .modifiedBy(expense.getModifiedBy())
-                                .createdDate(expense.getCreatedDate())
-                                .build()
-                );
-            }
-        }
-
-        return TravelResponse.builder()
-                .travelId(travel.getId())
-                .truckPlate(truck != null ? truck.getLicensePlate() : null)
-                .driverName(
-                        truck != null && truck.getDriver() != null
-                                ? truck.getDriver().getUsername()
-                                : null
-                )
-                .scheduleName(
-                        schedule != null
-                                ? schedule.getStartPlace() + " - " + schedule.getEndPlace()
-                                : null
-                )
-                .startDate(travel.getStartDate())
-                .endDate(travel.getEndDate())
-                .expenses(expenseResponses)
-                .totalExpense(totalExpense)
-                .build();
-    }
     @Caching(evict = {
             @CacheEvict(value = "travels_list", allEntries = true),
             @CacheEvict(value = "report_travel_daily", allEntries = true), // Xóa báo cáo nhật trình
@@ -164,31 +113,32 @@ public class TravelService {
                 }
         );
 
-        return toResponse(saved);
+        return travelMapper.toResponse(saved);
     }
 
-    @Cacheable(value = "travel_detail", key = "#travelId")
     public TravelResponse getTravelById(String travelId) {
         permissionService.getUser(
-                List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
+                List.of(PermissionKey.VIEW, PermissionKey.MANAGE),
                 PermissionType.TRAVEL
         );
+        return getTravelByIdCached(travelId);
+    }
+    @Cacheable(value = "travel_detail", key = "#travelId")
+    public TravelResponse getTravelByIdCached(String travelId) {
         Travel travel = travelRepository.findById(travelId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAVEL_NOT_FOUND));
-
-        return toResponse(travel);
+        return travelMapper.toResponse(travel);
     }
 
-    @Cacheable(value = "travels_list", key = "{#page, #size}")
-    public Page<TravelScheduleReportResponse> getALlTravels(int page, int size) {
+    public PageResponse<TravelScheduleReportResponse> getALlTravels(int page, int size) {
         permissionService.getUser(
-                List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
+                List.of(PermissionKey.VIEW, PermissionKey.MANAGE),
                 PermissionType.TRAVEL
         );
-        Pageable pageable = PageRequest.of(page, size);
-        return  travelRepository.findTravelPage(pageable);
-
+        return travelCacheService.getAllTravels(page, size);
     }
+
+
 
     @Caching(evict = {
             @CacheEvict(value = "travels_list", allEntries = true),
@@ -245,7 +195,7 @@ public class TravelService {
         travel.setEndDate(dto.getEndDate());
         Travel saved = travelRepository.save(travel);
 
-        return toResponse(saved);
+        return travelMapper.toResponse(saved);
     }
 
     @Caching(evict = {

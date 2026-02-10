@@ -13,10 +13,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface TravelRepositoryCustom {
-    List<Travel> findByTruck_IdAndStartDateBetween(String truckId, LocalDate fromDate, LocalDate toDate);
-
-    List<Travel> findByUserAndStartDateBetween(User user, LocalDate startDate, LocalDate startDate2);
-
     boolean existsByTruck_IdAndStartDate(String truckId, LocalDate startDate);
 
     boolean existsTravel(String truckId, LocalDate startDate, String travelId
@@ -29,5 +25,6 @@ public interface TravelRepositoryCustom {
             Integer month,
             Integer year
     );
+    Page<Travel> findTravelPageWithFetch(Pageable pageable);
 
 }

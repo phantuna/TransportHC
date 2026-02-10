@@ -3,7 +3,9 @@ package org.example.webapplication.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.webapplication.dto.request.truck.TruckRequest;
+import org.example.webapplication.dto.response.PageResponse;
 import org.example.webapplication.dto.response.truck.TruckResponse;
+import org.example.webapplication.dto.response.user.UserResponse;
 import org.example.webapplication.entity.Truck;
 import org.example.webapplication.entity.User;
 import org.example.webapplication.enums.PermissionKey;
@@ -13,6 +15,8 @@ import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.travel.TravelRepository;
 import org.example.webapplication.repository.truck.TruckRepository;
 import org.example.webapplication.repository.user.UserRepository;
+import org.example.webapplication.service.cache.TruckCacheService;
+import org.example.webapplication.service.mapper.TruckMapper;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -30,19 +34,10 @@ public class TruckService {
     private final TruckRepository truckRepository;
     private final UserRepository userRepository;
     private final PermissionService permissionService;
+    private final TruckCacheService  truckCacheService;
+    private final TruckMapper  truckMapper;
 
 
-    public TruckResponse toResponse(Truck truck, User driver) {
-        return TruckResponse.builder()
-                .id(truck.getId())
-                .typeTruck(truck.getTypeTruck())
-                .licensePlate(truck.getLicensePlate())
-                .ganMooc(truck.isGanMooc())
-                .status(truck.getStatus())
-                .driverId(driver != null ? driver.getId() : null)
-                .driverName(driver != null ? driver.getUsername() : null)
-                .build();
-    }
 
     @CacheEvict(value = "trucks_list", allEntries = true)
     @Transactional
@@ -79,12 +74,9 @@ public class TruckService {
 
         Truck saved = truckRepository.save(truck);
 
-        return toResponse(saved,driver);
+        return truckMapper.toResponse(saved);
     }
 
-
-
-    // manager - supervisor
     @CacheEvict(value = "trucks_list", allEntries = true)
     @Transactional
     public TruckResponse updatedTruck(TruckRequest dto, String truckId) {
@@ -119,22 +111,15 @@ public class TruckService {
         Truck saved = truckRepository.save(truck);
         User driver = saved.getDriver();
 
-        return toResponse(saved,driver);
+        return truckMapper.toResponse(saved);
     }
 
-    @Cacheable(value = "trucks_list", key = "{#page, #size}")
-    public Page<TruckResponse> getAllTrucks(int page, int size){
+    public PageResponse<TruckResponse> getAllTrucks(int page, int size) {
         permissionService.getUser(
-                List.of(PermissionKey.MANAGE,PermissionKey.VIEW),
+                List.of(PermissionKey.MANAGE, PermissionKey.VIEW),
                 PermissionType.TRUCK
         );
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Truck> truckPage = truckRepository.findAll(pageable);
-
-        return truckPage.map(truck -> {
-            User driver = truck.getDriver();
-            return toResponse(truck, driver);
-        });
+        return truckCacheService.getAllTrucks(page, size);
     }
 
     @CacheEvict(value = "trucks_list", allEntries = true)

@@ -24,7 +24,7 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom{
         List<User> content = queryFactory
                 .selectDistinct(qUser)
                 .from(qUser)
-                .join(qUser.roles, qRole)
+                .join(qUser.roles, qRole).fetchJoin()
                 .where(qRole.id.eq(roleId))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())

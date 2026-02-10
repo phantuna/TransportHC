@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.webapplication.dto.request.user.UpdateUserRequest;
 import org.example.webapplication.dto.request.user.UserRequest;
+import org.example.webapplication.dto.response.PageResponse;
 import org.example.webapplication.dto.response.user.UserResponse;
 import org.example.webapplication.entity.Role_Permission.Role;
 import org.example.webapplication.entity.User;
@@ -13,11 +14,9 @@ import org.example.webapplication.exception.AppException;
 import org.example.webapplication.exception.ErrorCode;
 import org.example.webapplication.repository.RoleRepository;
 import org.example.webapplication.repository.user.UserRepository;
+import org.example.webapplication.service.cache.UserCacheService;
+import org.example.webapplication.service.mapper.UserMapper;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,25 +29,14 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PermissionService permissionService;
+    private final UserCacheService userCacheService;
+    private final UserMapper  userMapper;
+
 
     BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public UserResponse toResponse(User user) {
-        return UserResponse.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .password(user.getPassword())
-                .birthday(user.getBirthday())
-                .phone(user.getPhone())
-                .roleIds(
-                        user.getRoles()
-                                .stream()
-                                .map(Role::getId)
-                                .toList()
-                )
-                .baseSalary(user.getBaseSalary())
-                .build();
-    }
+
+
     @CacheEvict(value = "users_list", allEntries = true)
     @Transactional
     public UserResponse createdUser(UserRequest dto,String roleId) {
@@ -72,7 +60,7 @@ public class UserService {
                         new AppException(ErrorCode.ROLE_NOT_FOUND));
         driver.setRoles(List.of(driverRole));
         User saved = userRepository.save(driver);
-        return toResponse(saved);
+        return userMapper.toResponse(saved);
     }
 
     public UserResponse getUserById() {
@@ -80,20 +68,19 @@ public class UserService {
                 List.of(PermissionKey.VIEW),
                 PermissionType.USER
         );
-        return toResponse(currentUser);
+        return userMapper.toResponse(currentUser);
     }
 
-    @Cacheable(value = "users_list", key = "{#page, #size}")
-    public Page<UserResponse> getAllUsers(int page , int size){
-        Pageable pageable = PageRequest.of(page, size);
-        Page<User> usersPage = userRepository.findAllByRole_Id("R_DRIVER",pageable);
-
+    public PageResponse<UserResponse> getAllUsers(int page, int size) {
         permissionService.getUser(
                 List.of(PermissionKey.MANAGE),
                 PermissionType.USER
         );
-        return usersPage.map(this::toResponse);
+        return userCacheService.getAllUsers(page, size);
     }
+
+
+
 
     @CacheEvict(value = "users_list", allEntries = true)
     @Transactional
@@ -117,9 +104,8 @@ public class UserService {
         }
 
         User saved = userRepository.save(currentUser);
-        return toResponse(saved);
+        return userMapper.toResponse(saved);
     }
-
 
     @CacheEvict(value = "users_list", allEntries = true)
     @Transactional

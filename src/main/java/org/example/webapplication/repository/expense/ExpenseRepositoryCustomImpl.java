@@ -27,6 +27,7 @@ public class ExpenseRepositoryCustomImpl implements ExpenseRepositoryCustom {
     private final QExpense qExpense = QExpense.expense1;
     private final QTravel qTravel = QTravel.travel;
     private final QUser qUser = QUser.user;
+    private final QTruck qTruck = QTruck.truck;
 
     private BooleanBuilder buildWhere(String truckId , LocalDate from, LocalDate to,String driverName){
         BooleanBuilder builder = new BooleanBuilder();
@@ -125,5 +126,26 @@ public class ExpenseRepositoryCustomImpl implements ExpenseRepositoryCustom {
                 .groupBy(expense.type)
                 .fetch();
     }
+    @Override
+    public Page<Expense> findExpensePage(Pageable pageable) {
+        List<Expense> data = queryFactory
+                .selectFrom(qExpense)
+                .join(qExpense.travel, qTravel).fetchJoin()
+                .join(qTravel.truck, qTruck).fetchJoin()
+                .leftJoin(qTruck.driver, qUser).fetchJoin()
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .orderBy(qExpense.createdDate.desc())
+                .fetch();
+
+        Long total = queryFactory
+                .select(qExpense.count())
+                .from(qExpense)
+                .fetchOne();
+
+        return new PageImpl<>(data, pageable, total);
+    }
+
+
 
 }

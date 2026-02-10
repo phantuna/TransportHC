@@ -3,6 +3,7 @@ package org.example.webapplication.controller;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import org.example.webapplication.dto.response.PageResponse;
 import org.example.webapplication.enums.ApprovalStatus;
 import org.example.webapplication.dto.request.schedule.ScheduleRequest;
 import org.example.webapplication.dto.response.schedule.ScheduleDocumentResponse;
@@ -43,8 +44,8 @@ public class ScheduleController {
 
     @GetMapping("/getAll")
     @PreAuthorize("isAuthenticated()")
-    public Page<ScheduleResponse> getAllSchedule(@RequestParam(defaultValue = "0") int page,
-                                                 @RequestParam(defaultValue = "10") int size){
+    public PageResponse<ScheduleResponse> getAllSchedule(@RequestParam(defaultValue = "0") int page,
+                                                         @RequestParam(defaultValue = "10") int size){
         return scheduleService.getAllSchedules(page,size);
     }
 

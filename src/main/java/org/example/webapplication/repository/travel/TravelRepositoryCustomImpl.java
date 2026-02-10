@@ -92,26 +92,6 @@ public class TravelRepositoryCustomImpl implements TravelRepositoryCustom{
                 .fetch();
     }
 
-
-    @Override
-    public List<Travel> findByTruck_IdAndStartDateBetween(String truckId, LocalDate fromDate, LocalDate toDate) {
-        BooleanBuilder buildWhere = buildWhere(truckId,null,fromDate,toDate,null);
-
-        return queryFactory
-                .selectFrom(qTravel)
-                .where(buildWhere)
-                .fetch();
-    };
-
-    @Override
-    public List<Travel> findByUserAndStartDateBetween(User user, LocalDate startDate, LocalDate endDate) {
-        BooleanBuilder buildWhere = buildWhere(null,user,startDate,endDate,null);
-
-        return queryFactory
-                .selectFrom(qTravel)
-                .where(buildWhere)
-                .fetch();
-    };
     @Override
     public boolean existsByTruck_IdAndStartDate(String truckId, LocalDate startDate) {
         BooleanBuilder buildWhere = buildWhere(truckId,null,startDate,null,null);
@@ -193,5 +173,28 @@ public class TravelRepositoryCustomImpl implements TravelRepositoryCustom{
                 .orderBy(qTravel.startDate.desc())
                 .fetchFirst();
     }
+
+    @Override
+    public Page<Travel> findTravelPageWithFetch(Pageable pageable) {
+
+        List<Travel> content = queryFactory
+                .selectDistinct(qTravel)
+                .from(qTravel)
+                .leftJoin(qTravel.truck, qTruck).fetchJoin()
+                .leftJoin(qTravel.user, qUser).fetchJoin()
+                .leftJoin(qTravel.schedule, qSchedule).fetchJoin()
+                .leftJoin(qTravel.expenses, qExpense).fetchJoin()
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(qTravel.countDistinct())
+                .from(qTravel)
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total);
+    }
+
 
 }

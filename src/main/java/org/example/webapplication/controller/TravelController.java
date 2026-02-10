@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.example.webapplication.dto.request.travel.TravelRequest;
+import org.example.webapplication.dto.response.PageResponse;
 import org.example.webapplication.dto.response.travel.TravelResponse;
 import org.example.webapplication.dto.response.travel.TravelScheduleReportResponse;
 import org.example.webapplication.service.TravelService;
@@ -33,8 +34,8 @@ public class TravelController {
 
     @GetMapping("/getAll")
     @PreAuthorize("isAuthenticated()")
-    public Page<TravelScheduleReportResponse> getAllTravels(@RequestParam(defaultValue = "0") int page,
-                                                            @RequestParam(defaultValue = "10") int size){
+    public PageResponse<TravelScheduleReportResponse> getAllTravels(@RequestParam(defaultValue = "0") int page,
+                                                                    @RequestParam(defaultValue = "10") int size){
         return travelService.getALlTravels(page,size);
     }
 

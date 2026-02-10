@@ -6,8 +6,10 @@ import org.example.webapplication.repository.RoleRepository;
 import org.example.webapplication.repository.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.LocalDate;
@@ -50,4 +52,12 @@ public class ApplicationConfig {
             }
         };
     }
+    @Bean
+    CommandLineRunner redisPing(RedisConnectionFactory factory) {
+        return args -> {
+            var conn = factory.getConnection();
+            System.out.println("Redis PING: " + conn.ping());
+        };
+    }
+
 }

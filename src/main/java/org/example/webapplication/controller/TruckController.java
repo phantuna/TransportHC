@@ -5,6 +5,7 @@ package org.example.webapplication.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.webapplication.dto.request.truck.TruckRequest;
+import org.example.webapplication.dto.response.PageResponse;
 import org.example.webapplication.dto.response.truck.TruckResponse;
 import org.example.webapplication.service.TruckService;
 import org.springframework.data.domain.Page;
@@ -34,7 +35,7 @@ public class TruckController {
 
     @GetMapping("/getAll")
     @PreAuthorize("isAuthenticated()")
-    public Page<TruckResponse> getALlTruck(
+    public PageResponse<TruckResponse> getALlTruck(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ){

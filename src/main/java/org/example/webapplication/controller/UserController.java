@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.webapplication.dto.request.user.UpdateUserRequest;
 import org.example.webapplication.dto.request.user.UserRequest;
+import org.example.webapplication.dto.response.PageResponse;
 import org.example.webapplication.dto.response.user.UserResponse;
 import org.example.webapplication.service.UserService;
 import org.springframework.data.domain.Page;
@@ -50,8 +51,8 @@ public class UserController {
 
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/getAll")
-    public Page<UserResponse> getAllUser( @RequestParam(defaultValue = "0") int page,
-                                          @RequestParam(defaultValue = "10") int size) {
+    public PageResponse<UserResponse> getAllUser(@RequestParam(defaultValue = "0") int page,
+                                                 @RequestParam(defaultValue = "10") int size) {
 
         return userService.getAllUsers(page,size);
     }

@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.example.webapplication.dto.request.expense.ExpenseRequest;
+import org.example.webapplication.dto.response.PageResponse;
 import org.example.webapplication.dto.response.expense.ExpenseResponse;
 import org.example.webapplication.service.ExpenseService;
 import org.springframework.data.domain.Page;
@@ -32,8 +33,8 @@ public class ExpenseController {
 
     @GetMapping("/getAll")
     @PreAuthorize("isAuthenticated()")
-    public Page<ExpenseResponse> getAllExpenses(@RequestParam(defaultValue = "0") int page,
-                                                @RequestParam(defaultValue = "10") int size){
+    public PageResponse<ExpenseResponse> getAllExpenses(@RequestParam(defaultValue = "0") int page,
+                                                        @RequestParam(defaultValue = "10") int size){
 
         return expenseService.getAllExpenses(page ,size);
     }

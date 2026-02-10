@@ -3,6 +3,7 @@ package org.example.webapplication.service;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.webapplication.dto.response.PageResponse;
 import org.example.webapplication.entity.Travel;
 import org.example.webapplication.enums.ApprovalStatus;
 import org.example.webapplication.dto.request.schedule.ScheduleRequest;
@@ -19,6 +20,8 @@ import org.example.webapplication.repository.schedule.ScheduleDocumentRepository
 import org.example.webapplication.repository.schedule.ScheduleRepository;
 import org.example.webapplication.repository.travel.TravelRepository;
 import org.example.webapplication.repository.user.UserRepository;
+import org.example.webapplication.service.cache.ScheduleCacheService;
+import org.example.webapplication.service.mapper.ScheduleMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -51,48 +54,12 @@ public class ScheduleService {
     private final ScheduleDocumentRepository scheduleDocumentRepository;
     private final PermissionService permissionService;
     private final TravelRepository  travelRepository;
+    private final ScheduleMapper  scheduleMapper;
+    private final ScheduleCacheService scheduleCacheService;
 
     @Value("${file.upload-dir}")
     private String uploadPath ;
 
-    // Helper map response
-    public ScheduleResponse toResponse(Schedule schedule) {
-        String driverName = "Chưa phân công";
-
-        Travel travel = travelRepository
-                .findCurrentBySchedule(schedule.getId(), LocalDate.now());
-
-        if (travel != null && travel.getUser() != null) {
-            driverName = travel.getUser().getUsername();
-        }
-
-        List<ScheduleDocumentResponse> documents = new ArrayList<>();
-        if (schedule.getDocuments() != null) {
-            for (ScheduleDocument doc : schedule.getDocuments()) {
-                documents.add(
-                        ScheduleDocumentResponse.builder()
-                                .fileName(doc.getFileName())
-                                .fileUrl(doc.getFileUrl())
-                                .fileType(doc.getFileType())
-                                .fileSize(doc.getFileSize())
-                                .build()
-                );
-            }
-        }
-
-        return ScheduleResponse.builder()
-                .id(schedule.getId())
-                .startPlace(schedule.getStartPlace())
-                .endPlace(schedule.getEndPlace())
-                .expense(schedule.getExpense())
-                .approval(schedule.getApproval())
-                .description(schedule.getDescription())
-                .driverName(driverName)
-                .documents(documents)
-                .build();
-    }
-
-    // 1. TẠO MỚI: Gắn trực tiếp @Caching lên đây
     @Caching(evict = {
             @CacheEvict(value = "schedules_list", allEntries = true),
             @CacheEvict(value = "schedules_user", allEntries = true),
@@ -130,32 +97,29 @@ public class ScheduleService {
         schedule.getDrivers().add(user);
         Schedule saved = scheduleRepository.save(schedule);
 
-        return toResponse(saved);
+        return scheduleMapper.toResponse(saved);
     }
 
-    // 2. LẤY DANH SÁCH CHUNG
-    @Cacheable(value = "schedules_list", key = "{#page, #size}")
-    public Page<ScheduleResponse> getAllSchedules(int page, int size) {
+
+    public PageResponse<ScheduleResponse> getAllSchedules(int page, int size) {
         permissionService.getUser(
-                List.of(PermissionKey.VIEW,PermissionKey.MANAGE),
+                List.of(PermissionKey.VIEW, PermissionKey.MANAGE),
                 PermissionType.SCHEDULE
         );
-        Page<Schedule> schedulePage =
-                scheduleRepository.findAll(PageRequest.of(page, size));
-
-        return schedulePage.map(this::toResponse);
+        return scheduleCacheService.getAllSchedules(page, size);
     }
 
-    // 3. LẤY DANH SÁCH THEO USER: Sửa lại SpEL Key cho chuẩn
-    @Cacheable(value = "schedules_user", key = "{T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName(), #page, #size}")
-    public Page<ScheduleResponse> getScheduleByUsername(int page, int size){
+
+    public Page<ScheduleResponse> getScheduleByUsername(int page, int size) {
         permissionService.getUser(
                 List.of(PermissionKey.VIEW),
                 PermissionType.SCHEDULE
         );
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName();
-
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return getScheduleByUsernameCached(username, page, size);
+    }
+    @Cacheable(value = "schedules_user", key = "{#username, #page, #size}")
+    public Page<ScheduleResponse> getScheduleByUsernameCached(String username, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<ScheduleResponse> schedulePage =
                 scheduleRepository.findSchedulePageByUsername(username, pageable);
@@ -163,30 +127,24 @@ public class ScheduleService {
         if (schedulePage.isEmpty()) {
             throw new AppException(ErrorCode.SCHEDULE_NOT_FOUND);
         }
+
         List<String> scheduleIds = schedulePage.getContent().stream()
                 .map(ScheduleResponse::getId)
                 .toList();
+
         List<ScheduleDocumentResponse> documents =
                 scheduleRepository.findDocumentsByScheduleIds(scheduleIds);
 
         Map<String, List<ScheduleDocumentResponse>> docMap =
-                documents.stream()
-                        .collect(Collectors.groupingBy(
-                                ScheduleDocumentResponse::getScheduleId
-                        ));
+                documents.stream().collect(Collectors.groupingBy(ScheduleDocumentResponse::getScheduleId));
 
         schedulePage.getContent().forEach(s ->
-                s.setDocuments(
-                        docMap.getOrDefault(s.getId(), List.of())
-                )
+                s.setDocuments(docMap.getOrDefault(s.getId(), List.of()))
         );
 
         return schedulePage;
-
     }
 
-
-    // 4. DUYỆT: Gắn trực tiếp @Caching
     @Caching(evict = {
             @CacheEvict(value = "schedules_list", allEntries = true),
             @CacheEvict(value = "schedules_user", allEntries = true),
@@ -220,7 +178,7 @@ public class ScheduleService {
         schedule.setApproval(target);
         Schedule saved = scheduleRepository.save(schedule);
 
-        return toResponse(saved);
+        return scheduleMapper.toResponse(saved);
     }
 
     // 5. CẬP NHẬT: Gắn trực tiếp @Caching
@@ -243,7 +201,7 @@ public class ScheduleService {
         schedule.setExpense(dto.getExpense());
 
         Schedule saved = scheduleRepository.save(schedule);
-        ScheduleResponse response =toResponse(saved);
+        ScheduleResponse response = scheduleMapper.toResponse(saved);
 
         return response;
     }

@@ -2,11 +2,13 @@ package org.example.webapplication.dto.response.travel;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class TravelScheduleReportResponse {
     private String travelId;
     private String truckPlate;

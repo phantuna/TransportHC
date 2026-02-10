@@ -30,5 +30,5 @@ public interface ExpenseRepositoryCustom {
             LocalDate from,
             LocalDate to
     );
-
+    Page<Expense> findExpensePage(Pageable pageable);
 }

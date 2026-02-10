@@ -8,7 +8,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 
 
 @SpringBootApplication
-@EnableCaching
 @EnableJpaAuditing
 @EnableMethodSecurity(prePostEnabled = true)
 public class WebApplication {
