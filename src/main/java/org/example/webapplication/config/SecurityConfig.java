@@ -1,0 +1,48 @@
+package org.example.webapplication.config;
+
+import lombok.RequiredArgsConstructor;
+import org.example.webapplication.exception.AppException;
+import org.example.webapplication.exception.CustomAccessDenied;
+import org.example.webapplication.exception.CustomAuthenticationEntryPoint;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+@Configuration
+@RequiredArgsConstructor
+public class SecurityConfig {
+    private final JwtFilter jwtFilter;
+
+//    private final JwtAuthenticationEntryPoint entryPoint;
+
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+    private final CustomAccessDenied accessDeniedHandler;
+    private final CustomAccessDenied customAccessDenied;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .cors(cors -> {})   // QUAN TRỌNG
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/login/**", "/user/driver/created/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
+
+
+
+}

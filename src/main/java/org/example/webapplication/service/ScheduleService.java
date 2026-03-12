@@ -1,0 +1,278 @@
+package org.example.webapplication.service;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.example.webapplication.dto.response.PageResponse;
+import org.example.webapplication.entity.Travel;
+import org.example.webapplication.enums.ApprovalStatus;
+import org.example.webapplication.dto.request.schedule.ScheduleRequest;
+import org.example.webapplication.dto.response.schedule.ScheduleDocumentResponse;
+import org.example.webapplication.dto.response.schedule.ScheduleResponse;
+import org.example.webapplication.entity.Schedule;
+import org.example.webapplication.entity.ScheduleDocument;
+import org.example.webapplication.entity.User;
+import org.example.webapplication.enums.PermissionKey;
+import org.example.webapplication.enums.PermissionType;
+import org.example.webapplication.exception.AppException;
+import org.example.webapplication.exception.ErrorCode;
+import org.example.webapplication.repository.schedule.ScheduleDocumentRepository;
+import org.example.webapplication.repository.schedule.ScheduleRepository;
+import org.example.webapplication.repository.travel.TravelRepository;
+import org.example.webapplication.repository.user.UserRepository;
+import org.example.webapplication.service.cache.ScheduleCacheService;
+import org.example.webapplication.service.mapper.ScheduleMapper;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ScheduleService {
+    private final UserRepository userRepository;
+    private final ScheduleRepository scheduleRepository;
+    private final ScheduleDocumentRepository scheduleDocumentRepository;
+    private final PermissionService permissionService;
+    private final TravelRepository  travelRepository;
+    private final ScheduleMapper  scheduleMapper;
+    private final ScheduleCacheService scheduleCacheService;
+
+    @Value("${file.upload-dir}")
+    private String uploadPath ;
+
+    @Caching(evict = {
+            @CacheEvict(value = "schedules_list", allEntries = true),
+            @CacheEvict(value = "schedules_user", allEntries = true),
+            @CacheEvict(value = "report_schedule", allEntries = true)
+    })
+    @Transactional
+    public ScheduleResponse createdSchedule (ScheduleRequest dto){
+        permissionService.getUser(
+                List.of(PermissionKey.CREATE),
+                PermissionType.SCHEDULE
+        );
+        String start = dto.getStartPlace().trim();
+        String end = dto.getEndPlace().trim();
+        if (start.equalsIgnoreCase(end)) {
+            throw new AppException(ErrorCode.START_END_PLACE_MUST_DIFFERENT);
+        }
+        if (scheduleRepository.existsByStartPlaceIgnoreCaseAndEndPlaceIgnoreCase(start, end)) {
+            throw new AppException(ErrorCode.SCHEDULE_ROUTE_EXISTED);
+        }
+        if (dto.getExpense() < 0) {
+            throw new AppException(ErrorCode.INVALID_EXPENSE);
+        }
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = auth.getName();
+
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new AppException(ErrorCode.DRIVER_NOT_FOUND));
+        Schedule schedule = new Schedule ();
+        schedule.setStartPlace(dto.getStartPlace());
+        schedule.setEndPlace(dto.getEndPlace());
+        schedule.setExpense(dto.getExpense());
+        schedule.setDescription(dto.getDescription());
+        schedule.setApproval(ApprovalStatus.PENDING_APPROVAL);
+        schedule.getDrivers().add(user);
+        Schedule saved = scheduleRepository.save(schedule);
+
+        return scheduleMapper.toResponse(saved);
+    }
+
+
+    public PageResponse<ScheduleResponse> getAllSchedules(int page, int size) {
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW, PermissionKey.MANAGE),
+                PermissionType.SCHEDULE
+        );
+        return scheduleCacheService.getAllSchedules(page, size);
+    }
+
+
+    public Page<ScheduleResponse> getScheduleByUsername(int page, int size) {
+        permissionService.getUser(
+                List.of(PermissionKey.VIEW),
+                PermissionType.SCHEDULE
+        );
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return getScheduleByUsernameCached(username, page, size);
+    }
+    @Cacheable(value = "schedules_user", key = "{#username, #page, #size}")
+    public Page<ScheduleResponse> getScheduleByUsernameCached(String username, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ScheduleResponse> schedulePage =
+                scheduleRepository.findSchedulePageByUsername(username, pageable);
+
+        if (schedulePage.isEmpty()) {
+            throw new AppException(ErrorCode.SCHEDULE_NOT_FOUND);
+        }
+
+        List<String> scheduleIds = schedulePage.getContent().stream()
+                .map(ScheduleResponse::getId)
+                .toList();
+
+        List<ScheduleDocumentResponse> documents =
+                scheduleRepository.findDocumentsByScheduleIds(scheduleIds);
+
+        Map<String, List<ScheduleDocumentResponse>> docMap =
+                documents.stream().collect(Collectors.groupingBy(ScheduleDocumentResponse::getScheduleId));
+
+        schedulePage.getContent().forEach(s ->
+                s.setDocuments(docMap.getOrDefault(s.getId(), List.of()))
+        );
+
+        return schedulePage;
+    }
+
+    @Caching(evict = {
+            @CacheEvict(value = "schedules_list", allEntries = true),
+            @CacheEvict(value = "schedules_user", allEntries = true),
+            @CacheEvict(value = "report_schedule", allEntries = true)
+    })
+    @Transactional
+    public ScheduleResponse approvalSchedule(String id, ApprovalStatus target) {
+        permissionService.getUser(
+                List.of(PermissionKey.APPROVE),
+                PermissionType.SCHEDULE
+        );
+        Schedule schedule = scheduleRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
+        ApprovalStatus current = schedule.getApproval() == null ? ApprovalStatus.PENDING_APPROVAL : schedule.getApproval();
+        boolean allowed;
+        if (current == target) {
+            throw new AppException(ErrorCode.SCHEDULE_ALREADY_IN_THIS_STATUS);
+        }
+
+        switch (current) {
+            case PENDING_APPROVAL ->
+                    allowed = target == ApprovalStatus.APPROVED;
+            case APPROVED ->
+                    allowed = target == ApprovalStatus.PENDING_APPROVAL;
+            default ->
+                    allowed = false;
+        }
+        if (!allowed) {
+            throw new AppException(ErrorCode.INVALID_APPROVAL_TRANSITION);
+        }
+        schedule.setApproval(target);
+        Schedule saved = scheduleRepository.save(schedule);
+
+        return scheduleMapper.toResponse(saved);
+    }
+
+    // 5. CẬP NHẬT: Gắn trực tiếp @Caching
+    @Caching(evict = {
+            @CacheEvict(value = "schedules_list", allEntries = true),
+            @CacheEvict(value = "schedules_user", allEntries = true),
+            @CacheEvict(value = "report_schedule", allEntries = true)
+    })
+    @Transactional
+    public ScheduleResponse updateSchedule(String scheduleId, ScheduleRequest dto){
+        permissionService.getUser(
+                List.of(PermissionKey.UPDATE),
+                PermissionType.SCHEDULE
+        );
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
+        schedule.setStartPlace(dto.getStartPlace());
+        schedule.setEndPlace(dto.getEndPlace());
+        schedule.setDescription(dto.getDescription());
+        schedule.setExpense(dto.getExpense());
+
+        Schedule saved = scheduleRepository.save(schedule);
+        ScheduleResponse response = scheduleMapper.toResponse(saved);
+
+        return response;
+    }
+
+    // 6. UPLOAD: Gắn trực tiếp @Caching
+    @Caching(evict = {
+            @CacheEvict(value = "schedules_list", allEntries = true),
+            @CacheEvict(value = "schedules_user", allEntries = true),
+            @CacheEvict(value = "report_schedule", allEntries = true)
+    })
+    @Transactional
+    public ScheduleDocumentResponse uploadDocument(String scheduleId, MultipartFile file) throws IOException {
+        permissionService.getUser(
+                List.of(PermissionKey.UPDATE),
+                PermissionType.SCHEDULE_DOCUMENT
+        );
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
+
+        if (file.isEmpty()) {
+            throw new AppException(ErrorCode.FILE_EMPTY);
+        }
+
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new AppException(ErrorCode.FILE_TOO_LARGE);
+        }
+
+        Path uploadDir = Paths.get(uploadPath );
+        Files.createDirectories(uploadDir);
+
+        String storedName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        Path dest = uploadDir.resolve(storedName);
+        Files.copy(file.getInputStream(), dest);
+
+        ScheduleDocument document = new ScheduleDocument();
+        document.setSchedule(schedule);
+        document.setFileName(file.getOriginalFilename());
+        document.setFileType(file.getContentType());
+        document.setFileSize(file.getSize());
+        document.setFileUrl("/files/" + storedName);
+
+        schedule.getDocuments().add(document);
+
+        ScheduleDocument saved = scheduleDocumentRepository.save(document);
+
+        return ScheduleDocumentResponse.builder()
+                .fileName(saved.getFileName())
+                .fileSize(saved.getFileSize())
+                .fileType(saved.getFileType())
+                .fileUrl(saved.getFileUrl())
+                .scheduleId(schedule.getId())
+
+                .build();
+
+    }
+
+    // 7. XÓA: Gắn trực tiếp @Caching
+    @Caching(evict = {
+            @CacheEvict(value = "schedules_list", allEntries = true),
+            @CacheEvict(value = "schedules_user", allEntries = true),
+            @CacheEvict(value = "report_schedule", allEntries = true)
+    })
+    @Transactional
+    public void deleteSchedule(String scheduleId) {
+        permissionService.getUser(
+                List.of(PermissionKey.MANAGE),
+                PermissionType.SCHEDULE
+        );
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
+
+        scheduleRepository.delete(schedule);
+    }
+}
